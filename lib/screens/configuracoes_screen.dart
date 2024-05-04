@@ -13,8 +13,8 @@ class ConfiguracoesScreen extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: <Widget>[
-            ConnectionSection(),
-            ParametersSection(),
+            ConnectionSection(), // Connection section for Bluetooth
+            ParametersSection(), // Parameters section for user inputs
           ],
         ),
       ),
@@ -28,54 +28,21 @@ class ConnectionSection extends StatefulWidget {
 }
 
 class _ConnectionSectionState extends State<ConnectionSection> {
-  FlutterBlue flutterBlue = FlutterBlue.instance;
-  BluetoothDevice? connectedDevice;
-  List<BluetoothService> services = [];
+  final ConnectionManager connectionManager = ConnectionManager();
 
   @override
   void initState() {
     super.initState();
-    startScan();
+    connectionManager.onDeviceConnected = () => setState(() {});
+    connectionManager.onDeviceDisconnected = () => setState(() {});
+    connectionManager.onScanResults = (devices) => setState(() {});
+    connectionManager.startScan();
   }
 
-  void startScan() {
-    flutterBlue.startScan(timeout: Duration(seconds: 4));
-
-    // Listen to scan results
-    var subscription = flutterBlue.scanResults.listen((results) {
-      for (ScanResult result in results) {
-        print('${result.device.name} encontrado! rssi: ${result.rssi}');
-        if (result.device.name == 'ESP32') {
-          connectToDevice(result.device);
-          flutterBlue.stopScan();
-          break;
-        }
-      }
-    });
-
-    Future.delayed(Duration(seconds: 4), () {
-      flutterBlue.stopScan();
-      subscription.cancel();
-    });
-  }
-
-  void connectToDevice(BluetoothDevice device) async {
-    await device.connect();
-    setState(() {
-      connectedDevice = device;
-    });
-
-    discoverServices();
-  }
-
-  void discoverServices() async {
-    if (connectedDevice != null) {
-      List<BluetoothService> services =
-          await connectedDevice!.discoverServices();
-      setState(() {
-        this.services = services;
-      });
-    }
+  @override
+  void dispose() {
+    connectionManager.disconnectFromDevice();
+    super.dispose();
   }
 
   @override
@@ -83,22 +50,88 @@ class _ConnectionSectionState extends State<ConnectionSection> {
     return Card(
       child: Column(
         children: <Widget>[
-          ListTile(
-            leading: Icon(Icons.bluetooth),
-            title: Text('Conexão com Base de Lançamento'),
-            subtitle:
-                Text(connectedDevice != null ? 'Conectado' : 'Desconectado'),
-          ),
-          ListTile(
-            title: Text(
-                'Tempo de conexão: ${connectedDevice != null ? 'Ativo' : 'Desativado'}'),
-            subtitle: Text(connectedDevice != null
-                ? 'Conectado com sucesso!'
-                : 'Escanenado dispositivos...'),
-          ),
+          if (connectionManager.connectedDevice != null) ...[
+            ListTile(
+              leading: Icon(Icons.bluetooth_connected),
+              title: Text(connectionManager.connectedDevice!.name),
+              subtitle: Text('Conectado'),
+              trailing: IconButton(
+                icon: Icon(Icons.cancel),
+                onPressed: () => connectionManager.disconnectFromDevice(),
+              ),
+            ),
+          ] else ...[
+            ListTile(
+              title: Text('Conexão Bluetooth'),
+              subtitle: Text(
+                  'Não foi possível conectar a nenhum dispositivo, recarregue a página'),
+            ),
+            for (BluetoothDevice device in connectionManager.availableDevices)
+              ListTile(
+                leading: Icon(Icons.bluetooth),
+                title: Text(
+                    device.name.isEmpty ? 'Dispositivo sem nome' : device.name),
+                trailing: IconButton(
+                  icon: Icon(Icons.login),
+                  onPressed: () => connectionManager.connectToDevice(device),
+                ),
+              ),
+          ],
         ],
       ),
     );
+  }
+}
+
+class ConnectionManager {
+  FlutterBlue flutterBlue = FlutterBlue.instance;
+  BluetoothDevice? connectedDevice;
+  List<BluetoothDevice> availableDevices = [];
+  List<BluetoothService> services =
+      []; // Stores the services of the connected device
+  bool isScanning = false;
+
+  Function()? onDeviceConnected;
+  Function()? onDeviceDisconnected;
+  Function(List<BluetoothDevice>)? onScanResults;
+
+  void startScan() async {
+    isScanning = true;
+    flutterBlue.startScan(timeout: Duration(seconds: 4));
+
+    var subscription = flutterBlue.scanResults.listen((results) {
+      availableDevices = results.map((r) => r.device).toList();
+      onScanResults?.call(availableDevices);
+    });
+
+    await Future.delayed(Duration(seconds: 4), () {
+      if (isScanning) {
+        flutterBlue.stopScan();
+        subscription.cancel();
+        isScanning = false;
+      }
+    });
+  }
+
+  void connectToDevice(BluetoothDevice device) async {
+    await device.connect();
+    connectedDevice = device;
+    onDeviceConnected?.call();
+    await discoverServices();
+  }
+
+  Future<void> discoverServices() async {
+    if (connectedDevice != null) {
+      services = await connectedDevice!.discoverServices();
+    }
+  }
+
+  void disconnectFromDevice() async {
+    if (connectedDevice != null) {
+      await connectedDevice!.disconnect();
+      connectedDevice = null;
+      onDeviceDisconnected?.call();
+    }
   }
 }
 
@@ -145,11 +178,7 @@ class ParametersSection extends StatelessWidget {
               builder: (context, isButtonActive, child) {
                 return IconButton(
                   icon: Icon(Icons.check),
-                  onPressed: isButtonActive
-                      ? () {
-                          // Logic to apply settings
-                        }
-                      : null,
+                  onPressed: isButtonActive ? () {} : null,
                 );
               },
             ),
