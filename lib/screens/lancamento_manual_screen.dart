@@ -102,7 +102,7 @@ class RelayControlSection extends StatelessWidget {
                 buildSquareButton(context, 'AGITAR', Colors.green,
                     onUpdateStageText, Icons.waves),
                 buildSquareButton(context, 'INCLINAR', Colors.green,
-                    onUpdateStageText, Icons.compare_arrows),
+                    onUpdateStageText, Icons.trending_up),
                 buildSquareButton(context, 'ALERTAR', Colors.green,
                     onUpdateStageText, Icons.warning),
                 buildSquareButton(context, 'DISPARAR', Colors.green,

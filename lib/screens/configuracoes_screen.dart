@@ -13,8 +13,8 @@ class ConfiguracoesScreen extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: <Widget>[
-            ConnectionSection(), // Connection section for Bluetooth
-            ParametersSection(), // Parameters section for user inputs
+            ConnectionSection(),
+            ParametersSection(),
           ],
         ),
       ),
@@ -28,21 +28,53 @@ class ConnectionSection extends StatefulWidget {
 }
 
 class _ConnectionSectionState extends State<ConnectionSection> {
-  final ConnectionManager connectionManager = ConnectionManager();
+  FlutterBlue flutterBlue = FlutterBlue.instance;
+  List<BluetoothDevice> devices = [];
+  BluetoothDevice? connectedDevice;
+  List<String> messages = [];
 
   @override
   void initState() {
     super.initState();
-    connectionManager.onDeviceConnected = () => setState(() {});
-    connectionManager.onDeviceDisconnected = () => setState(() {});
-    connectionManager.onScanResults = (devices) => setState(() {});
-    connectionManager.startScan();
+    flutterBlue.connectedDevices.then((connectedDevices) {
+      if (connectedDevices.isNotEmpty) {
+        setState(() {
+          connectedDevice = connectedDevices.first;
+        });
+      }
+    });
   }
 
-  @override
-  void dispose() {
-    connectionManager.disconnectFromDevice();
-    super.dispose();
+  void startScan() {
+    flutterBlue.startScan(timeout: Duration(seconds: 10));
+
+    flutterBlue.scanResults.listen((results) {
+      for (ScanResult result in results) {
+        if (!devices.contains(result.device)) {
+          setState(() {
+            devices.add(result.device);
+          });
+        }
+      }
+    });
+
+    flutterBlue.stopScan();
+  }
+
+  void connectToDevice(BluetoothDevice device) async {
+    await device.connect();
+    setState(() {
+      connectedDevice = device;
+    });
+  }
+
+  void disconnectFromDevice() async {
+    if (connectedDevice != null) {
+      await connectedDevice!.disconnect();
+      setState(() {
+        connectedDevice = null;
+      });
+    }
   }
 
   @override
@@ -50,88 +82,26 @@ class _ConnectionSectionState extends State<ConnectionSection> {
     return Card(
       child: Column(
         children: <Widget>[
-          if (connectionManager.connectedDevice != null) ...[
-            ListTile(
-              leading: Icon(Icons.bluetooth_connected),
-              title: Text(connectionManager.connectedDevice!.name),
-              subtitle: Text('Conectado'),
-              trailing: IconButton(
-                icon: Icon(Icons.cancel),
-                onPressed: () => connectionManager.disconnectFromDevice(),
+          ListTile(
+            leading: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.blue,
+                shape: BoxShape.circle,
               ),
+              child: Icon(Icons.bluetooth, color: Colors.white),
             ),
-          ] else ...[
-            ListTile(
-              title: Text('Conexão Bluetooth'),
-              subtitle: Text(
-                  'Não foi possível conectar a nenhum dispositivo, recarregue a página'),
+            title: Text('Bluetooth'),
+            trailing: IconButton(
+              icon: Icon(Icons.restart_alt),
+              onPressed: () => startScan(),
             ),
-            for (BluetoothDevice device in connectionManager.availableDevices)
-              ListTile(
-                leading: Icon(Icons.bluetooth),
-                title: Text(
-                    device.name.isEmpty ? 'Dispositivo sem nome' : device.name),
-                trailing: IconButton(
-                  icon: Icon(Icons.login),
-                  onPressed: () => connectionManager.connectToDevice(device),
-                ),
-              ),
-          ],
+          ),
+          // Remaining code...
         ],
       ),
     );
-  }
-}
-
-class ConnectionManager {
-  FlutterBlue flutterBlue = FlutterBlue.instance;
-  BluetoothDevice? connectedDevice;
-  List<BluetoothDevice> availableDevices = [];
-  List<BluetoothService> services =
-      []; // Stores the services of the connected device
-  bool isScanning = false;
-
-  Function()? onDeviceConnected;
-  Function()? onDeviceDisconnected;
-  Function(List<BluetoothDevice>)? onScanResults;
-
-  void startScan() async {
-    isScanning = true;
-    flutterBlue.startScan(timeout: Duration(seconds: 4));
-
-    var subscription = flutterBlue.scanResults.listen((results) {
-      availableDevices = results.map((r) => r.device).toList();
-      onScanResults?.call(availableDevices);
-    });
-
-    await Future.delayed(Duration(seconds: 4), () {
-      if (isScanning) {
-        flutterBlue.stopScan();
-        subscription.cancel();
-        isScanning = false;
-      }
-    });
-  }
-
-  void connectToDevice(BluetoothDevice device) async {
-    await device.connect();
-    connectedDevice = device;
-    onDeviceConnected?.call();
-    await discoverServices();
-  }
-
-  Future<void> discoverServices() async {
-    if (connectedDevice != null) {
-      services = await connectedDevice!.discoverServices();
-    }
-  }
-
-  void disconnectFromDevice() async {
-    if (connectedDevice != null) {
-      await connectedDevice!.disconnect();
-      connectedDevice = null;
-      onDeviceDisconnected?.call();
-    }
   }
 }
 
@@ -160,15 +130,36 @@ class ParametersSection extends StatelessWidget {
           children: <Widget>[
             TextField(
               controller: inclinacaoController,
-              decoration:
-                  InputDecoration(labelText: 'Ângulo de Inclinação (º)'),
+              decoration: InputDecoration(
+                labelText: 'Ângulo de Inclinação (º)',
+                icon: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.orange,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.trending_up, color: Colors.white),
+                ),
+              ),
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             ),
             SizedBox(height: 10),
             TextField(
               controller: pressaoController,
-              decoration: InputDecoration(labelText: 'Pressão Máxima (psi)'),
+              decoration: InputDecoration(
+                labelText: 'Pressão Máxima (psi)',
+                icon: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.speed, color: Colors.white),
+                ),
+              ),
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             ),
