@@ -1,4 +1,3 @@
-// main.dart
 import 'package:flutter/material.dart';
 import 'screens/configuracoes_screen.dart';
 import 'screens/lancamento_manual_screen.dart';

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart' as fb_plus;
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 class ConfiguracoesScreen extends StatelessWidget {
   @override
@@ -28,12 +28,12 @@ class ConnectionSection extends StatefulWidget {
 }
 
 class _ConnectionSectionState extends State<ConnectionSection> {
-  List<fb_plus.BluetoothDevice> devices = [];
-  fb_plus.BluetoothDevice? connectedDevice;
+  List<BluetoothDevice> devices = [];
+  BluetoothDevice? connectedDevice;
   List<String> messages = [];
 
-  Stream<List<fb_plus.BluetoothDevice>> connectedDevicesStream =
-      Stream.fromIterable([fb_plus.FlutterBluePlus.connectedDevices]);
+  Stream<List<BluetoothDevice>> connectedDevicesStream =
+      Stream.fromIterable([FlutterBluePlus.connectedDevices]);
 
   @override
   void initState() {
@@ -45,8 +45,8 @@ class _ConnectionSectionState extends State<ConnectionSection> {
         });
       }
     });
-    fb_plus.FlutterBluePlus.scanResults.listen((results) {
-      for (fb_plus.ScanResult result in results) {
+    FlutterBluePlus.scanResults.listen((results) {
+      for (ScanResult result in results) {
         if (!devices.contains(result.device)) {
           setState(() {
             devices.add(result.device);
@@ -58,10 +58,10 @@ class _ConnectionSectionState extends State<ConnectionSection> {
 
   void startScan() {
     print("Starting Bluetooth scan...");
-    fb_plus.FlutterBluePlus.startScan(timeout: Duration(seconds: 10));
+    FlutterBluePlus.startScan(timeout: Duration(seconds: 10));
   }
 
-  void connectToDevice(fb_plus.BluetoothDevice device) async {
+  void connectToDevice(BluetoothDevice device) async {
     await device.connect();
     setState(() {
       connectedDevice = device;
