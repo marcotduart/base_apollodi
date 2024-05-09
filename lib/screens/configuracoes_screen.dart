@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_blue/flutter_blue.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart' as fb_plus;
 
 class ConfiguracoesScreen extends StatelessWidget {
   @override
@@ -28,28 +28,25 @@ class ConnectionSection extends StatefulWidget {
 }
 
 class _ConnectionSectionState extends State<ConnectionSection> {
-  FlutterBlue flutterBlue = FlutterBlue.instance;
-  List<BluetoothDevice> devices = [];
-  BluetoothDevice? connectedDevice;
+  List<fb_plus.BluetoothDevice> devices = [];
+  fb_plus.BluetoothDevice? connectedDevice;
   List<String> messages = [];
+
+  Stream<List<fb_plus.BluetoothDevice>> connectedDevicesStream =
+      Stream.fromIterable([fb_plus.FlutterBluePlus.connectedDevices]);
 
   @override
   void initState() {
     super.initState();
-    flutterBlue.connectedDevices.then((connectedDevices) {
+    connectedDevicesStream.listen((connectedDevices) {
       if (connectedDevices.isNotEmpty) {
         setState(() {
           connectedDevice = connectedDevices.first;
         });
       }
     });
-  }
-
-  void startScan() {
-    flutterBlue.startScan(timeout: Duration(seconds: 10));
-
-    flutterBlue.scanResults.listen((results) {
-      for (ScanResult result in results) {
+    fb_plus.FlutterBluePlus.scanResults.listen((results) {
+      for (fb_plus.ScanResult result in results) {
         if (!devices.contains(result.device)) {
           setState(() {
             devices.add(result.device);
@@ -57,11 +54,14 @@ class _ConnectionSectionState extends State<ConnectionSection> {
         }
       }
     });
-
-    flutterBlue.stopScan();
   }
 
-  void connectToDevice(BluetoothDevice device) async {
+  void startScan() {
+    print("Starting Bluetooth scan...");
+    fb_plus.FlutterBluePlus.startScan(timeout: Duration(seconds: 10));
+  }
+
+  void connectToDevice(fb_plus.BluetoothDevice device) async {
     await device.connect();
     setState(() {
       connectedDevice = device;
@@ -95,10 +95,9 @@ class _ConnectionSectionState extends State<ConnectionSection> {
             title: Text('Bluetooth'),
             trailing: IconButton(
               icon: Icon(Icons.restart_alt),
-              onPressed: () => startScan(),
+              onPressed: startScan,
             ),
           ),
-          // Remaining code...
         ],
       ),
     );

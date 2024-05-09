@@ -22,7 +22,9 @@ if (flutterVersionName == null) {
     flutterVersionName = '1.0'
 }
 
-android {
+Android {
+    defaultConfig {
+     minSdkVersion: 21}
     namespace "com.example.base_apollodi"
     compileSdk flutter.compileSdkVersion
     ndkVersion flutter.ndkVersion
