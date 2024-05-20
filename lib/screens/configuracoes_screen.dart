@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
@@ -29,22 +28,15 @@ class ConnectionSection extends StatefulWidget {
 
 class _ConnectionSectionState extends State<ConnectionSection> {
   List<BluetoothDevice> devices = [];
-  BluetoothDevice? connectedDevice;
-  List<String> messages = [];
-
-  Stream<List<BluetoothDevice>> connectedDevicesStream =
-      Stream.fromIterable([FlutterBluePlus.connectedDevices]);
 
   @override
   void initState() {
     super.initState();
-    connectedDevicesStream.listen((connectedDevices) {
-      if (connectedDevices.isNotEmpty) {
-        setState(() {
-          connectedDevice = connectedDevices.first;
-        });
-      }
-    });
+    startScanning();
+  }
+
+  void startScanning() async {
+    await FlutterBluePlus.startScan();
     FlutterBluePlus.scanResults.listen((results) {
       for (ScanResult result in results) {
         if (!devices.contains(result.device)) {
@@ -56,51 +48,28 @@ class _ConnectionSectionState extends State<ConnectionSection> {
     });
   }
 
-  void startScan() {
-    print("Starting Bluetooth scan...");
-    FlutterBluePlus.startScan(timeout: Duration(seconds: 10));
-  }
-
-  void connectToDevice(BluetoothDevice device) async {
-    await device.connect();
-    setState(() {
-      connectedDevice = device;
-    });
-  }
-
-  void disconnectFromDevice() async {
-    if (connectedDevice != null) {
-      await connectedDevice!.disconnect();
-      setState(() {
-        connectedDevice = null;
-      });
-    }
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Scanner'),
+      ),
+      body: ListView.builder(
+        itemCount: devices.length,
+        itemBuilder: (context, index) {
+          return ListTile(
+            title: Text(devices[index].name),
+            subtitle: Text(devices[index].id.toString()),
+          );
+        },
+      ),
+    );
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Column(
-        children: <Widget>[
-          ListTile(
-            leading: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.blue,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.bluetooth, color: Colors.white),
-            ),
-            title: Text('Bluetooth'),
-            trailing: IconButton(
-              icon: Icon(Icons.restart_alt),
-              onPressed: startScan,
-            ),
-          ),
-        ],
-      ),
-    );
+  void dispose() {
+    FlutterBluePlus.stopScan();
+    super.dispose();
   }
 }
 
