@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'bluetooth_screen.dart';
 
 class ConfiguracoesScreen extends StatelessWidget {
   @override
@@ -12,64 +12,12 @@ class ConfiguracoesScreen extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: <Widget>[
-            ConnectionSection(),
+            BluetoothScreen(),
             ParametersSection(),
           ],
         ),
       ),
     );
-  }
-}
-
-class ConnectionSection extends StatefulWidget {
-  @override
-  _ConnectionSectionState createState() => _ConnectionSectionState();
-}
-
-class _ConnectionSectionState extends State<ConnectionSection> {
-  List<BluetoothDevice> devices = [];
-
-  @override
-  void initState() {
-    super.initState();
-    startScanning();
-  }
-
-  void startScanning() async {
-    await FlutterBluePlus.startScan();
-    FlutterBluePlus.scanResults.listen((results) {
-      for (ScanResult result in results) {
-        if (!devices.contains(result.device)) {
-          setState(() {
-            devices.add(result.device);
-          });
-        }
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Scanner'),
-      ),
-      body: ListView.builder(
-        itemCount: devices.length,
-        itemBuilder: (context, index) {
-          return ListTile(
-            title: Text(devices[index].name),
-            subtitle: Text(devices[index].id.toString()),
-          );
-        },
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    FlutterBluePlus.stopScan();
-    super.dispose();
   }
 }
 
