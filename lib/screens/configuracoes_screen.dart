@@ -12,8 +12,8 @@ class ConfiguracoesScreen extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: <Widget>[
-            BluetoothScreen(),
             ParametersSection(),
+            BluetoothScreen(),
           ],
         ),
       ),

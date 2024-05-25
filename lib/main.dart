@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'screens/configuracoes_screen.dart';
 import 'screens/lancamento_manual_screen.dart';
 import 'screens/lancamento_automatico_screen.dart';
+import 'screens/bluetooth_screen.dart';
 
 void main() => runApp(MeuApp());
 
@@ -27,7 +27,7 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
   int _selectedIndex = 0;
 
   static List<Widget> _widgetOptions = <Widget>[
-    ConfiguracoesScreen(),
+    BluetoothScreen(),
     LancamentoManualScreen(),
     LancamentoAutomaticoScreen(),
   ];
@@ -47,7 +47,7 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
+            icon: Icon(Icons.settings), 
             label: 'Configurações',
           ),
           BottomNavigationBarItem(
