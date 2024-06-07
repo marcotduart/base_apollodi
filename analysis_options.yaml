@@ -12,8 +12,8 @@ include: package:flutter_lints/flutter.yaml
 dependencies:
   flutter:
     sdk: flutter
-  bluetooth_serial: ^1.0.0 # Use a versão mais recente disponível
-  flutter_blue: ^0.7.3
+  bluetooth_serial: ^1.0.0 
+  flutter_blue: ^1.32.7
 
   
 

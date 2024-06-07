@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 
+
 class LancamentoManualScreen extends StatefulWidget {
   @override
   _LancamentoManualScreenState createState() => _LancamentoManualScreenState();
@@ -8,25 +9,23 @@ class LancamentoManualScreen extends StatefulWidget {
 
 class _LancamentoManualScreenState extends State<LancamentoManualScreen> {
   String stageText = ' ';
-  Timer? _timer; // Adicionando uma variável para o Timer
+  Timer? _timer;
 
   void updateStageText(String newStage) {
     setState(() {
       stageText = '$newStage ativado com sucesso';
     });
-    // Cancela qualquer timer existente para evitar sobreposições
     _timer?.cancel();
-    // Define um novo timer para limpar o texto após 3 segundos
     _timer = Timer(Duration(seconds: 3), () {
       setState(() {
-        stageText = ' '; // Limpa o texto
+        stageText = ' ';
       });
     });
   }
 
   @override
   void dispose() {
-    _timer?.cancel(); // Cancela o timer quando o widget é desmontado
+    _timer?.cancel();
     super.dispose();
   }
 
@@ -84,8 +83,10 @@ class RelayControlSection extends StatelessWidget {
   final Function(String) onUpdateStageText;
   final String stageText;
 
-  RelayControlSection(
-      {required this.onUpdateStageText, required this.stageText});
+  RelayControlSection({
+    required this.onUpdateStageText,
+    required this.stageText,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -94,22 +95,78 @@ class RelayControlSection extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: <Widget>[
-            Wrap(
-              spacing: 10,
-              children: <Widget>[
-                buildSquareButton(context, 'IGNITAR', Colors.green,
-                    onUpdateStageText, Icons.whatshot),
-                buildSquareButton(context, 'AGITAR', Colors.green,
-                    onUpdateStageText, Icons.waves),
-                buildSquareButton(context, 'INCLINAR', Colors.green,
-                    onUpdateStageText, Icons.trending_up),
-                buildSquareButton(context, 'ALERTAR', Colors.green,
-                    onUpdateStageText, Icons.warning),
-                buildSquareButton(context, 'DISPARAR', Colors.green,
-                    onUpdateStageText, Icons.rocket_launch),
-                buildSquareButton(context, 'ABORTAR', Colors.red,
-                    onUpdateStageText, Icons.cancel),
-              ],
+            Text(
+              stageText,
+              style: TextStyle(fontSize: 16, color: Colors.black54),
+            ),
+            SizedBox(height: 20),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                double buttonWidth = constraints.maxWidth / 3 - 10;
+
+                if (constraints.maxWidth < 500) {
+                  buttonWidth = constraints.maxWidth / 2 - 10;
+                }
+                if (constraints.maxWidth < 300) {
+                  buttonWidth = constraints.maxWidth - 10;
+                }
+
+                return Wrap(
+                  spacing: 5,
+                  runSpacing: 5,
+                  alignment: WrapAlignment.center,
+                  children: <Widget>[
+                    buildSquareButton(
+                      context,
+                      'IGNITAR',
+                      Colors.green,
+                      onUpdateStageText,
+                      Icons.whatshot,
+                      buttonWidth,
+                    ),
+                    buildSquareButton(
+                      context,
+                      'AGITAR',
+                      Colors.green,
+                      onUpdateStageText,
+                      Icons.waves,
+                      buttonWidth,
+                    ),
+                    buildSquareButton(
+                      context,
+                      'INCLINAR',
+                      Colors.green,
+                      onUpdateStageText,
+                      Icons.trending_up,
+                      buttonWidth,
+                    ),
+                    buildSquareButton(
+                      context,
+                      'ALERTAR',
+                      Colors.green,
+                      onUpdateStageText,
+                      Icons.warning,
+                      buttonWidth,
+                    ),
+                    buildSquareButton(
+                      context,
+                      'DISPARAR',
+                      Colors.green,
+                      onUpdateStageText,
+                      Icons.rocket_launch,
+                      buttonWidth,
+                    ),
+                    buildSquareButton(
+                      context,
+                      'ABORTAR',
+                      Colors.red,
+                      onUpdateStageText,
+                      Icons.cancel,
+                      buttonWidth,
+                    ),
+                  ],
+                );
+              },
             ),
           ],
         ),
@@ -117,18 +174,25 @@ class RelayControlSection extends StatelessWidget {
     );
   }
 
-  Widget buildSquareButton(BuildContext context, String title, Color color,
-      Function(String) onUpdateStageText, IconData icon) {
+  Widget buildSquareButton(
+    BuildContext context,
+    String title,
+    Color color,
+    Function(String) onUpdateStageText,
+    IconData icon,
+    double width,
+  ) {
     return InkWell(
       onTap: () {
-        onUpdateStageText(title); // Atualiza o texto do palco
+        onUpdateStageText(title);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('$title ATIVADO'),
-            duration: Duration(seconds: 1))); // Exibe a SnackBar
+          content: Text('$title ativado'),
+          duration: Duration(seconds: 1),
+        ));
       },
       child: Container(
-        width: 80,
-        height: 80,
+        width: width,
+        height: width,
         decoration: BoxDecoration(
           color: color,
           borderRadius: BorderRadius.circular(8),
@@ -143,4 +207,10 @@ class RelayControlSection extends StatelessWidget {
       ),
     );
   }
+}
+
+void main() {
+  runApp(MaterialApp(
+    home: LancamentoManualScreen(),
+  ));
 }

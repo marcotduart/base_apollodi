@@ -3,7 +3,10 @@ import 'screens/lancamento_manual_screen.dart';
 import 'screens/lancamento_automatico_screen.dart';
 import 'screens/bluetooth_screen.dart';
 
-void main() => runApp(MeuApp());
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(MeuApp());
+}
 
 class MeuApp extends StatelessWidget {
   @override
@@ -26,13 +29,13 @@ class TelaPrincipal extends StatefulWidget {
 class _TelaPrincipalState extends State<TelaPrincipal> {
   int _selectedIndex = 0;
 
-  static List<Widget> _widgetOptions = <Widget>[
+static List<Widget> _widgetOptions = <Widget>[
     BluetoothScreen(),
     LancamentoManualScreen(),
     LancamentoAutomaticoScreen(),
   ];
 
-  void _onItemTapped(int index) {
+  void _onItemTapped(int index) { 
     setState(() {
       _selectedIndex = index;
     });
@@ -47,7 +50,7 @@ class _TelaPrincipalState extends State<TelaPrincipal> {
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-            icon: Icon(Icons.settings), 
+            icon: Icon(Icons.settings),
             label: 'Configurações',
           ),
           BottomNavigationBarItem(

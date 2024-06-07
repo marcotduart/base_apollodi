@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class BluetoothScreen extends StatefulWidget {
   @override
@@ -11,23 +12,31 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
   BluetoothDevice? connectedDevice;
   BluetoothCharacteristic? targetCharacteristic;
   bool isScanning = false;
-  final Duration scanInterval = Duration(seconds: 10);
+  final Duration scanInterval = Duration(seconds: 15);
+  final TextEditingController angleController = TextEditingController();
+  final TextEditingController pressureController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
+    requestPermissions();
     scanForDevicesPeriodically();
+  }
+
+  Future<void> requestPermissions() async {
+    await Permission.bluetooth.request();
+    await Permission.location.request();
   }
 
   void scanForDevices() async {
     if (isScanning) return;
-    
+
     setState(() {
       isScanning = true;
       devicesList.clear();
     });
 
-    FlutterBluePlus.startScan(timeout: Duration(seconds: 4));
+    FlutterBluePlus.startScan(timeout: Duration(seconds: 5));
 
     FlutterBluePlus.scanResults.listen((results) {
       setState(() {
@@ -35,7 +44,7 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
       });
     });
 
-    await Future.delayed(Duration(seconds: 4));
+    await Future.delayed(Duration(seconds: 5));
     FlutterBluePlus.stopScan();
     setState(() {
       isScanning = false;
@@ -75,8 +84,7 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
           });
           characteristic.setNotifyValue(true);
           characteristic.value.listen((value) {
-            // Process received data from ESP32
-            print('Received data: $value');
+            print('Informação recebida: $value');
           });
         }
       }
@@ -93,18 +101,19 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
     if (isScanning) {
       return Center(child: CircularProgressIndicator());
     } else if (devicesList.isEmpty) {
-      return Center(child: Text('No devices found'));
+      return Center(child: Text('Nenhum dispositivo encontrado'));
     } else {
       return ListView.builder(
         itemCount: devicesList.length,
         itemBuilder: (context, index) {
           BluetoothDevice device = devicesList[index];
           return ListTile(
-            title: Text(device.name),
+            title: Text(
+                device.name.isNotEmpty ? device.name : 'Dispositivo sem nome'),
             subtitle: Text(device.id.toString()),
             trailing: ElevatedButton(
               onPressed: () => connectToDevice(device),
-              child: Text('Connect'),
+              child: Text('Conectar'),
             ),
           );
         },
@@ -116,7 +125,7 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Bluetooth'),
+        title: Text('Configurações'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -131,7 +140,37 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
               ],
             ),
             SizedBox(height: 20),
-            Expanded(child: buildBluetoothDeviceList()),
+            connectedDevice != null
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Conectado a ${connectedDevice!.name}',
+                          style: TextStyle(fontSize: 18)),
+                      SizedBox(height: 20),
+                      TextField(
+                        controller: angleController,
+                        decoration:
+                            InputDecoration(labelText: 'Ângulo de Inclinação'),
+                      ),
+                      TextField(
+                        controller: pressureController,
+                        decoration:
+                            InputDecoration(labelText: 'Pressão Máxima'),
+                      ),
+                      SizedBox(height: 20),
+                      ElevatedButton(
+                        onPressed: () {
+                          sendDataToCharacteristic('L1');
+                          String angle = angleController.text;
+                          String pressure = pressureController.text;
+                          sendDataToCharacteristic('$angle');
+                          sendDataToCharacteristic('$pressure');
+                        },
+                        child: Text('Aplicar'),
+                      ),
+                    ],
+                  )
+                : Expanded(child: buildBluetoothDeviceList()),
           ],
         ),
       ),
@@ -139,7 +178,7 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
           ? FloatingActionButton(
               onPressed: disconnectFromDevice,
               child: Icon(Icons.bluetooth_disabled),
-              tooltip: 'Disconnect',
+              tooltip: 'Desconectar',
             )
           : null,
     );

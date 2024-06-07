@@ -1,10 +1,8 @@
-// pressure_display.dart
 import 'package:flutter/material.dart';
 
 class PressureDisplay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    // Placeholder for pressure graph
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
