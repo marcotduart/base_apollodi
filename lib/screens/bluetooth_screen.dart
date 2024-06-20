@@ -3,6 +3,8 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class BluetoothScreen extends StatefulWidget {
+  static BluetoothCharacteristic? targetCharacteristic; // Static for global access
+
   @override
   _BluetoothScreenState createState() => _BluetoothScreenState();
 }
@@ -10,7 +12,6 @@ class BluetoothScreen extends StatefulWidget {
 class _BluetoothScreenState extends State<BluetoothScreen> {
   List<BluetoothDevice> devicesList = [];
   BluetoothDevice? connectedDevice;
-  BluetoothCharacteristic? targetCharacteristic;
   bool isScanning = false;
   final Duration scanInterval = Duration(seconds: 15);
   final TextEditingController angleController = TextEditingController();
@@ -69,7 +70,7 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
       await connectedDevice!.disconnect();
       setState(() {
         connectedDevice = null;
-        targetCharacteristic = null;
+        BluetoothScreen.targetCharacteristic = null;
       });
     }
   }
@@ -78,22 +79,13 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
     List<BluetoothService> services = await device.discoverServices();
     for (BluetoothService service in services) {
       for (BluetoothCharacteristic characteristic in service.characteristics) {
-        if (characteristic.properties.write && characteristic.properties.read) {
+        if (characteristic.properties.write) {
           setState(() {
-            targetCharacteristic = characteristic;
+            BluetoothScreen.targetCharacteristic = characteristic;
           });
-          characteristic.setNotifyValue(true);
-          characteristic.value.listen((value) {
-            print('Informação recebida: $value');
-          });
+          break;
         }
       }
-    }
-  }
-
-  void sendDataToCharacteristic(String data) async {
-    if (targetCharacteristic != null) {
-      await targetCharacteristic!.write(data.codeUnits);
     }
   }
 
@@ -160,11 +152,10 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
                       SizedBox(height: 20),
                       ElevatedButton(
                         onPressed: () {
-                          sendDataToCharacteristic('L1');
                           String angle = angleController.text;
                           String pressure = pressureController.text;
-                          sendDataToCharacteristic('$angle');
-                          sendDataToCharacteristic('$pressure');
+                         sendCommand('$angle');
+                          sendCommand('$pressure');
                         },
                         child: Text('Aplicar'),
                       ),
@@ -183,10 +174,10 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
           : null,
     );
   }
-}
 
-void main() {
-  runApp(MaterialApp(
-    home: BluetoothScreen(),
-  ));
+  void sendCommand(String data) async {
+    if (BluetoothScreen.targetCharacteristic != null) {
+      await BluetoothScreen.targetCharacteristic!.write(data.codeUnits);
+    }
+  }
 }

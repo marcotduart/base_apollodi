@@ -1,32 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:base_apollodi/widgets/pressure_display.dart';
+import 'bluetooth_screen.dart';
+
+// Função para enviar comandos via Bluetooth
+void sendCommand(String data) async {
+  if (BluetoothScreen.targetCharacteristic != null) {
+    await BluetoothScreen.targetCharacteristic!.write(data.codeUnits);
+  }
+}
 
 class LancamentoAutomaticoScreen extends StatefulWidget {
   @override
-  _LancamentoAutomaticoScreenState createState() => _LancamentoAutomaticoScreenState();
+  _LancamentoAutomaticoScreenState createState() =>
+      _LancamentoAutomaticoScreenState();
 }
 
-class _LancamentoAutomaticoScreenState extends State<LancamentoAutomaticoScreen> {
+class _LancamentoAutomaticoScreenState
+    extends State<LancamentoAutomaticoScreen> {
   bool canStartLaunch = false;
   bool canAbortLaunch = false;
 
+  // Função chamada ao pressionar um botão
   void handleButtonPress(String title) {
+    String command = ""; // Inicializa a string de comando
     if (title == 'NOVO LANÇAMENTO') {
       setState(() {
         canStartLaunch = true;
         canAbortLaunch = false;
       });
+      command = "L1ON"; // Comando para ligar o LED
     } else if (title == 'INICIAR LANÇAMENTO') {
       setState(() {
         canStartLaunch = false;
         canAbortLaunch = true;
       });
+      command = "START"; // Exemplo de outro comando
     } else if (title == 'ABORTAR') {
       setState(() {
         canStartLaunch = false;
         canAbortLaunch = false;
       });
+      command = "L1OFF"; // Comando para desligar o LED
     }
+    sendCommand(command); // Envia o comando mapeado via Bluetooth
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text('$title ATIVADO'),
       duration: Duration(seconds: 1),
@@ -73,17 +89,14 @@ class AutomaticControlSection extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            double buttonWidth = (constraints.maxWidth - 48) / 3; // Espaço para 3 botões com margem de 16 cada lado e 8 entre eles
+            double buttonWidth = (constraints.maxWidth - 48) / 3; // Espaço para botões 
 
             return Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly, // Espalha os botões uniformemente
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly, // Espalha os botões 
               children: <Widget>[
-                buildSquareButton(
-                    context, 'NOVO LANÇAMENTO', Colors.green, Icons.add, true, buttonWidth),
-                buildSquareButton(
-                    context, 'INICIAR LANÇAMENTO', Colors.green, Icons.start, canStartLaunch, buttonWidth),
-                buildSquareButton(
-                    context, 'ABORTAR', Colors.red, Icons.cancel, canAbortLaunch, buttonWidth),
+                buildSquareButton(context, 'NOVO LANÇAMENTO', Colors.green, Icons.add, true, buttonWidth),
+                buildSquareButton(context, 'INICIAR LANÇAMENTO', Colors.green, Icons.start, canStartLaunch, buttonWidth),
+                buildSquareButton(context, 'ABORTAR', Colors.red, Icons.cancel, canAbortLaunch, buttonWidth),
               ],
             );
           },
@@ -92,37 +105,35 @@ class AutomaticControlSection extends StatelessWidget {
     );
   }
 
-  Widget buildSquareButton(BuildContext context, String title, Color color, IconData icon,
-      bool isEnabled, double width) {
+  Widget buildSquareButton(BuildContext context, String title, Color color, IconData icon, bool isEnabled, double width) {
     return InkWell(
       onTap: isEnabled
           ? () {
-              onButtonPress(title);
+              onButtonPress(title); // Chama a função ao pressionar o botão
             }
           : null,
       child: Container(
-        width: width, // Ajusta a largura baseada no espaço disponível
-        height: 100, // Mantém a altura de 100
+        width: width, 
+        height: 100, 
         decoration: BoxDecoration(
-          color: isEnabled ? color : Colors.grey, // Muda a cor se desabilitado
+          color: isEnabled ? color : Colors.grey, 
           borderRadius: BorderRadius.circular(8),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(10), // Adiciona padding para o layout interno
+          padding: const EdgeInsets.all(10), 
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start, // Alinha o texto à esquerda
+            crossAxisAlignment: CrossAxisAlignment.start, // Alinha o texto 
             children: <Widget>[
               Icon(icon, color: Colors.white, size: 50),
               Expanded(
-                // Utiliza o widget Expanded para permitir que o texto ocupe o espaço restante
                 child: Text(
                   title,
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 14,
-                    fontWeight: FontWeight.bold, // Torna o texto negrito para melhor visibilidade
+                    fontWeight: FontWeight.bold, 
                   ),
-                  overflow: TextOverflow.ellipsis, // Adiciona elipse se o texto for muito longo
+                  overflow: TextOverflow.ellipsis, 
                 ),
               ),
             ],

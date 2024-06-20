@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'bluetooth_screen.dart';
 
+void sendCommand(String data) async {
+  if (BluetoothScreen.targetCharacteristic != null) {
+    await BluetoothScreen.targetCharacteristic!.write(data.codeUnits);
+  }
+}
 
 class LancamentoManualScreen extends StatefulWidget {
   @override
@@ -185,6 +191,7 @@ class RelayControlSection extends StatelessWidget {
     return InkWell(
       onTap: () {
         onUpdateStageText(title);
+        sendCommand(title);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('$title ativado'),
           duration: Duration(seconds: 1),
