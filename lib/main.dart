@@ -51,7 +51,7 @@ static List<Widget> _widgetOptions = <Widget>[
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
-            label: 'Configurações',
+            label: 'Config.',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.back_hand),

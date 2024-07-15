@@ -32,6 +32,8 @@ dependencies:
     sdk: flutter
   flutter_blue: ^0.8.0
   flutter_blue_plus: ^1.32.7
+  fl_chart: 0.68.0
+  shared_preferences: ^2.2.3
   get: ^4.6.5
   cupertino_icons: ^1.0.6
   permission_handler: ^11.3.1
