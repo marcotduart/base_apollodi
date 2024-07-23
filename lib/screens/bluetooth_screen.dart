@@ -4,6 +4,8 @@ import 'package:permission_handler/permission_handler.dart';
 
 class BluetoothScreen extends StatefulWidget {
   static BluetoothCharacteristic? targetCharacteristic;
+  static BluetoothCharacteristic? targetPressureCharacteristic;
+  static BluetoothCharacteristic? targetAngleCharacteristic;
 
   @override
   _BluetoothScreenState createState() => _BluetoothScreenState();
@@ -16,6 +18,8 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
   final Duration scanInterval = Duration(seconds: 15);
   final TextEditingController angleController = TextEditingController(); // Adicionando componente de adicionar texto para ângulo
   final TextEditingController pressureController = TextEditingController();  // Adicionando componente de adicionar texto para ângulo
+  String receivedPressureData = ''; // Definindo varíavel para dados de pressão recebidos
+  String receivedAngleData = ''; // Definindo varíavel para dados de ângulo recebidos
   String receivedData = ''; // Definindo varíavel para dados recebidos
 
   @override
@@ -84,10 +88,43 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
       setState(() {
         connectedDevice = null;
         BluetoothScreen.targetCharacteristic = null;
+        BluetoothScreen.targetPressureCharacteristic = null;
+        BluetoothScreen.targetAngleCharacteristic = null;
         receivedData = ''; 
+        receivedPressureData = '';
+        receivedAngleData = '';
       });
     }
   } // Função para desconectar dispositivo
+
+void discoverPressureAngleServices(BluetoothDevice device) async {
+    List<BluetoothService> services = await device.discoverServices();
+    for (BluetoothService service in services) {
+      for (BluetoothCharacteristic characteristic in service.characteristics) {
+        if (characteristic.uuid.toString() == '0972EF8C-7613-4075-AD52-756F33D4DA91') {
+          setState(() {
+            BluetoothScreen.targetPressureCharacteristic = characteristic;
+          });
+          characteristic.setNotifyValue(true);
+          characteristic.value.listen((value) {
+            setState(() {
+              receivedPressureData = String.fromCharCodes(value);
+            });
+          });
+        } else if (characteristic.uuid.toString() == '0f1d2df9-f709-4633-bb27-0c52e13f748a') {
+          setState(() {
+            BluetoothScreen.targetAngleCharacteristic = characteristic;
+          });
+          characteristic.setNotifyValue(true);
+          characteristic.value.listen((value) {
+            setState(() {
+              receivedAngleData = String.fromCharCodes(value);
+            });
+          });
+        }
+      }
+    }
+  }
 
   void discoverServices(BluetoothDevice device) async {
     List<BluetoothService> services = await device.discoverServices();
