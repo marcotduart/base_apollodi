@@ -6,7 +6,7 @@ void sendCommand(String data) async {
   if (BluetoothScreen.targetCharacteristic != null) {
     await BluetoothScreen.targetCharacteristic!.write(data.codeUnits);
   }
-}
+} // Função para enviar comandos via Bluetooth
 
 class LancamentoAutomaticoScreen extends StatefulWidget {
   @override
@@ -14,37 +14,38 @@ class LancamentoAutomaticoScreen extends StatefulWidget {
 }
 
 class _LancamentoAutomaticoScreenState extends State<LancamentoAutomaticoScreen> {
-  bool canStartLaunch = false;
-  bool canAbortLaunch = false;
-  Map<String, bool> switchStates = {
-    'NOVO LANÇAMENTO': false,
-    'INICIAR LANÇAMENTO': false,
-    'ABORTAR': false,
-  };
+  Map<String, bool> buttonStates = {
+    'Nova missão': false,
+    'Iniciar missão': false,
+    'Abortar': false,
+  }; // Cria uma lista com os botões
 
-  void handleSwitchToggle(String title, bool isActive, String commandOn, String commandOff) {
-    String command = isActive ? commandOn : commandOff;
-    sendCommand(command);
+  @override
+  void initState() {
+    super.initState();
+  } // Inicia funções da tela 
 
+  void _resetAllButtons() {
     setState(() {
-      switchStates[title] = isActive;
-      if (title == 'NOVO LANÇAMENTO') {
-        canStartLaunch = isActive;
-        canAbortLaunch = false;
-      } else if (title == 'INICIAR LANÇAMENTO') {
-        canStartLaunch = false;
-        canAbortLaunch = isActive;
-      } else if (title == 'ABORTAR') {
-        canStartLaunch = false;
-        canAbortLaunch = false;
-      }
+      buttonStates.keys.forEach((title) {
+        buttonStates[title] = false;
+      });
     });
+  } // Resetar botões 
 
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('$title ${isActive ? "ativado" : "desativado"}'),
-      duration: Duration(seconds: 1),
-    ));
-  }
+  void handleButtonPress(String title, String commandOn) {
+    sendCommand(commandOn);
+    setState(() {
+      buttonStates[title] = true;
+    });
+  } // Função para enviar comandos enquanto pressiona botões 
+
+  void handleButtonRelease(String title, String commandOff) {
+    sendCommand(commandOff);
+    setState(() {
+      buttonStates[title] = false;
+    });
+  } // Função para enviar comandos enquanto botões não estão pressionados 
 
   @override
   Widget build(BuildContext context) {
@@ -57,58 +58,63 @@ class _LancamentoAutomaticoScreenState extends State<LancamentoAutomaticoScreen>
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             PressureDisplay(),
-            SizedBox(height: 20),
-            ...switchStates.entries.map((entry) {
-              String title = entry.key;
-              bool isActive = entry.value;
-              IconData icon;
-              Color color;
-              String commandOn;
-              String commandOff;
+            SizedBox(height: 15),
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              children: buttonStates.entries.map((entry) {
+                String title = entry.key;
+                bool isActive = entry.value;
+                IconData icon;
+                Color color;
+                String commandOn;
+                String commandOff; // Cria lista para variáveis com informações dos botões
 
-              switch (title) {
-                case 'NOVO LANÇAMENTO':
-                  icon = Icons.add;
-                  color = Colors.green;
-                  commandOn = 'L10';
-                  commandOff = 'L00';
-                  break;
-                case 'INICIAR LANÇAMENTO':
-                  icon = Icons.play_arrow;
-                  color = Colors.green;
-                  commandOn = 'L50';
-                  commandOff = 'L40';
-                  break;
-                case 'ABORTAR':
-                  icon = Icons.cancel;
-                  color = Colors.red;
-                  commandOn = 'L60';
-                  commandOff = 'L50';
-                  break;
-                default:
-                  icon = Icons.help;
-                  color = Colors.grey;
-                  commandOn = '';
-                  commandOff = '';
-              }
+                switch (title) {
+                  case 'Nova missão':
+                    icon = Icons.add;
+                    color = Colors.green;
+                    commandOn = 'L11';
+                    commandOff = 'L10';
+                    break; 
+                  case 'Iniciar missão':
+                    icon = Icons.rocket_launch;
+                    color = Colors.green;
+                    commandOn = 'L20';
+                    commandOff = 'L21';
+                    break; 
+                  case 'Abortar':
+                    icon = Icons.cancel;
+                    color = Colors.deepOrange;
+                    commandOn = 'L30';
+                    commandOff = 'L31';
+                    break; 
+                  default:
+                    icon = Icons.help;
+                    color = Colors.grey;
+                    commandOn = '';
+                    commandOff = '';
+                }
 
-              return buildSwitch(
-                context,
-                title,
-                icon,
-                color,
-                commandOn,
-                commandOff,
-                isActive,
-              );
-            }).toList(),
+                return buildButton(
+                  context,
+                  title,
+                  icon,
+                  color,
+                  commandOn,
+                  commandOff,
+                  isActive,
+                ); // Funções para relacionar variáveis de informações com botões
+              }).toList(),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget buildSwitch(
+  Widget buildButton(
     BuildContext context,
     String title,
     IconData icon,
@@ -116,26 +122,24 @@ class _LancamentoAutomaticoScreenState extends State<LancamentoAutomaticoScreen>
     String commandOn,
     String commandOff,
     bool isActive,
-  ) {
-    return Container(
-      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      child: Card(
-        elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        child: ListTile(
-          leading: Icon(icon, color: isActive ? color : Colors.grey, size: 24),
-          title: Text(
-            title,
-            style: TextStyle(color: isActive ? color : Colors.grey, fontSize: 16),
-          ),
-          trailing: Switch(
-            value: isActive,
-            onChanged: (value) {
-              handleSwitchToggle(title, value, commandOn, commandOff);
-            },
-            activeColor: color,
-            inactiveThumbColor: Colors.grey,
-            inactiveTrackColor: Colors.grey[300],
+  ) { // Função para criar botões
+    return GestureDetector( // Função para identificar gesto dos botões e enviar comandos
+      onTapDown: (_) => handleButtonPress(title, commandOn),
+      onTapUp: (_) => handleButtonRelease(title, commandOff),
+      child: Container(
+        margin: EdgeInsets.symmetric(vertical: 3, horizontal: 3),
+        child: Card(
+          elevation: 1,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Icon(icon, color: isActive ? color : Colors.grey, size: 50),
+              Text(
+                title,
+                style: TextStyle(color: isActive ? color : Colors.grey, fontSize: 16),
+              ),
+            ],
           ),
         ),
       ),

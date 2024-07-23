@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:convex_bottom_bar/convex_bottom_bar.dart';
 import 'screens/lancamento_manual_screen.dart';
 import 'screens/lancamento_automatico_screen.dart';
 import 'screens/bluetooth_screen.dart';
@@ -14,7 +15,7 @@ class MeuApp extends StatelessWidget {
     return MaterialApp(
       title: 'Controle de Lançamento',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.amber,
       ),
       home: TelaPrincipal(),
     );
@@ -29,13 +30,13 @@ class TelaPrincipal extends StatefulWidget {
 class _TelaPrincipalState extends State<TelaPrincipal> {
   int _selectedIndex = 0;
 
-static List<Widget> _widgetOptions = <Widget>[
+  static List<Widget> _widgetOptions = <Widget>[
     BluetoothScreen(),
     LancamentoManualScreen(),
     LancamentoAutomaticoScreen(),
   ];
 
-  void _onItemTapped(int index) { 
+  void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
@@ -47,24 +48,26 @@ static List<Widget> _widgetOptions = <Widget>[
       body: Center(
         child: _widgetOptions.elementAt(_selectedIndex),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Config.',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.back_hand),
-            label: 'Manual',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.rocket_launch),
-            label: 'Automático',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.amber[800],
-        onTap: _onItemTapped,
+      bottomNavigationBar: ClipRRect(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(50),
+          topRight: Radius.circular(50),
+        ),
+        child: ConvexAppBar(
+          backgroundColor: Colors.white,
+          activeColor: Colors.amber,
+          color: Colors.black,
+          style: TabStyle.react,
+          items: [
+            TabItem(icon: Icons.settings, title: _selectedIndex == 0 ? 'Config.' : ''),
+            TabItem(icon: Icons.back_hand, title: _selectedIndex == 1 ? 'Manual' : ''),
+            TabItem(icon: Icons.rocket_launch, title: _selectedIndex == 2 ? 'Automático' : ''),
+          ],
+          initialActiveIndex: _selectedIndex,
+          onTap: _onItemTapped,
+          curveSize: 150,
+          height: 70,
+        ),
       ),
     );
   }

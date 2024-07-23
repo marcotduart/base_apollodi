@@ -7,51 +7,51 @@ class BluetoothScreen extends StatefulWidget {
 
   @override
   _BluetoothScreenState createState() => _BluetoothScreenState();
-}
+} // Criando tela Bluetooth
 
 class _BluetoothScreenState extends State<BluetoothScreen> {
   List<BluetoothDevice> devicesList = [];
   BluetoothDevice? connectedDevice;
   bool isScanning = false;
   final Duration scanInterval = Duration(seconds: 15);
-  final TextEditingController angleController = TextEditingController();
-  final TextEditingController pressureController = TextEditingController();
-  String receivedData = '';
+  final TextEditingController angleController = TextEditingController(); // Adicionando componente de adicionar texto para ângulo
+  final TextEditingController pressureController = TextEditingController();  // Adicionando componente de adicionar texto para ângulo
+  String receivedData = ''; // Definindo varíavel para dados recebidos
 
   @override
   void initState() {
     super.initState();
     requestPermissions();
     scanForDevicesPeriodically();
-  }
+  } // Inicializand funções da tela
 
   Future<void> requestPermissions() async {
     await Permission.bluetooth.request();
     await Permission.location.request();
-  }
+  } // Função para requisitar permissões
 
   void scanForDevices() async {
-    if (isScanning || connectedDevice != null) return;
+    if (isScanning || connectedDevice != null) return; // Função para escanear dispositivo 
 
     setState(() {
-      isScanning = true;
-      devicesList.clear();
-    });
+      isScanning = true; // Definindo variável booleando para estado do Scan
+      devicesList.clear(); // Limpando lista e dispostiviso Bluetooth
+    }); 
 
-    FlutterBluePlus.startScan(timeout: Duration(seconds: 5));
+    FlutterBluePlus.startScan(timeout: Duration(seconds: 5)); // Iniciando scan
 
     FlutterBluePlus.scanResults.listen((results) {
       setState(() {
         devicesList = results.map((r) => r.device).toList();
       });
-    });
+    }); // Construindo lista dos dispositivos Bluetooth pareáveis a partir dos resultados do Scan
 
     await Future.delayed(Duration(seconds: 5));
     FlutterBluePlus.stopScan();
     setState(() {
       isScanning = false;
     });
-  }
+  } // Função para parar Scan a cada 5 segundos
 
   void scanForDevicesPeriodically() async {
     if (connectedDevice == null) {
@@ -59,17 +59,24 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
       await Future.delayed(scanInterval);
       scanForDevicesPeriodically();
     }
-  }
+  } // Função para iniciar Scan periodicamente 
 
   void connectToDevice(BluetoothDevice device) async {
-    await device.connect();
+     await device.connect();
     setState(() {
       connectedDevice = device;
       isScanning = false; 
-    });
+    }); // Função para conectar dispositivo selecionado da lista
     FlutterBluePlus.stopScan(); 
     discoverServices(device);
-  }
+
+    sendCommand('L10'); // Desligar IGNITAR
+  sendCommand('L20'); // Desligar AGITAR
+  sendCommand('L30'); // Desligar INCLINAR
+  sendCommand('L40'); // Desligar ALERTAR
+  sendCommand('L50'); // Desligar DISPARAR
+  sendCommand('L60'); // Desligar ABORTAR
+  } // Função para enviar comando de desligar todos os botões após conectado
 
   void disconnectFromDevice() async {
     if (connectedDevice != null) {
@@ -80,7 +87,7 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
         receivedData = ''; 
       });
     }
-  }
+  } // Função para desconectar dispositivo
 
   void discoverServices(BluetoothDevice device) async {
     List<BluetoothService> services = await device.discoverServices();
@@ -101,13 +108,13 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
         }
       }
     }
-  }
+  } // Função para identificar características Bluetooth 
 
   void sendCommand(String data) async {
     if (BluetoothScreen.targetCharacteristic != null) {
       await BluetoothScreen.targetCharacteristic!.write(data.codeUnits);
     }
-  }
+  } // Função para enviar comando para o via Bluetooth
 
   void applySettings() {
     String angle = angleController.text;
@@ -115,10 +122,10 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
     sendCommand('ANGLE: $angle');
     sendCommand('PRESSURE: $pressure');
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('CONFIGURAÇÕES APLICADAS'),
+      content: Text('As configurações foram aplicadas'),
       duration: Duration(seconds: 2),
     ));
-  }
+  } // Função para aplicar configuração enviando comandos via Bluetooth
 
   Widget buildBluetoothDeviceList() {
     if (isScanning) {
@@ -142,7 +149,7 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
         },
       );
     }
-  }
+  } // Função para criar widget com lista dos dipositivos Bluetooth e botões para conexão
 
   @override
   Widget build(BuildContext context) {
@@ -176,8 +183,6 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
                     onPressed: applySettings,
                     child: Text('Aplicar'),
                   ),
-                  SizedBox(height: 20),
-                  Text('Dados Recebidos: $receivedData', style: TextStyle(fontSize: 16)),
                 ],
               )
             : Expanded(child: buildBluetoothDeviceList()),
