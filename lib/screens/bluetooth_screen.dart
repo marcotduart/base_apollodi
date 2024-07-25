@@ -97,7 +97,7 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
     }
   } // Função para desconectar dispositivo
 
-void discoverPressureAngleServices(BluetoothDevice device) async {
+void discoverPressaoAnguloServices(BluetoothDevice device) async {
     List<BluetoothService> services = await device.discoverServices();
     for (BluetoothService service in services) {
       for (BluetoothCharacteristic characteristic in service.characteristics) {

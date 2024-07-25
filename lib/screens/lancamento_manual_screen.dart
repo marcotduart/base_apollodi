@@ -14,10 +14,10 @@ class LancamentoManualScreen extends StatefulWidget {
   _LancamentoManualScreenState createState() => _LancamentoManualScreenState();
 }
 
-class _LancamentoManualScreenState extends State<LancamentoManualScreen> {
+class _LancamentoManualScreenState extends State<LancamentoManualScreen>
+    with SingleTickerProviderStateMixin {
   String inclinationLevel = 'N/A';
   Timer? _timer;
-
   Map<String, bool> buttonStates = {
     'Ignitar': false,
     'Agitar': false,
@@ -26,16 +26,24 @@ class _LancamentoManualScreenState extends State<LancamentoManualScreen> {
     'Disparar': false,
     'Abortar': false,
   };
+  AnimationController? _controller;
+  Animation<double>? _animation;
 
   @override
   void initState() {
     super.initState();
     _timer = Timer.periodic(Duration(seconds: 1), (Timer t) => fetchInclinationData());
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 200),
+      vsync: this,
+    );
+    _animation = Tween<double>(begin: 1.0, end: 0.95).animate(_controller!);
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _controller?.dispose();
     super.dispose();
   }
 
@@ -53,19 +61,12 @@ class _LancamentoManualScreenState extends State<LancamentoManualScreen> {
     }
   }
 
-  void _resetAllButtons() {
-    setState(() {
-      buttonStates.keys.forEach((title) {
-        buttonStates[title] = false;
-      });
-    });
-  }
-
   void handleButtonPress(String title, String commandOn) {
     sendCommand(commandOn);
     setState(() {
       buttonStates[title] = true;
     });
+    _controller?.forward();
   }
 
   void handleButtonRelease(String title, String commandOff) {
@@ -73,6 +74,7 @@ class _LancamentoManualScreenState extends State<LancamentoManualScreen> {
     setState(() {
       buttonStates[title] = false;
     });
+    _controller?.reverse();
   }
 
   @override
@@ -182,20 +184,24 @@ class _LancamentoManualScreenState extends State<LancamentoManualScreen> {
     return GestureDetector(
       onTapDown: (_) => handleButtonPress(title, commandOn),
       onTapUp: (_) => handleButtonRelease(title, commandOff),
-      child: Container(
-        margin: EdgeInsets.symmetric(vertical: 3, horizontal: 3),
-        child: Card(
-          elevation: 1,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Icon(icon, color: isActive ? color : Colors.grey, size: 50),
-              Text(
-                title,
-                style: TextStyle(color: isActive ? color : Colors.grey, fontSize: 16),
-              ),
-            ],
+      child: ScaleTransition(
+        scale: _animation!,
+        child: Container(
+          margin: EdgeInsets.symmetric(vertical: 3, horizontal: 3),
+          child: Card(
+            color: isActive ? color : Colors.white,
+            elevation: 1,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Icon(icon, color: isActive ? Colors.white : color, size: 50),
+                Text(
+                  title,
+                  style: TextStyle(color: isActive ? Colors.white : color, fontSize: 16),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -214,24 +220,28 @@ class _LancamentoManualScreenState extends State<LancamentoManualScreen> {
     return GestureDetector(
       onTapDown: (_) => handleButtonPress(title, commandOn),
       onTapUp: (_) => handleButtonRelease(title, commandOff),
-      child: Container(
-        margin: EdgeInsets.symmetric(vertical: 3, horizontal: 3),
-        child: Card(
-          elevation: 1,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Icon(icon, color: isActive ? color : Colors.grey, size: 50),
-              Text(
-                title,
-                style: TextStyle(color: isActive ? color : Colors.grey, fontSize: 16),
-              ),
-              Text(
-                'Inclinação: $inclinationLevel',
-                style: TextStyle(color: isActive ? color : Colors.grey, fontSize: 12),
-              ),
-            ],
+      child: ScaleTransition(
+        scale: _animation!,
+        child: Container(
+          margin: EdgeInsets.symmetric(vertical: 3, horizontal: 3),
+          child: Card(
+            color: isActive ? color : Colors.white,
+            elevation: 1,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Icon(icon, color: isActive ? Colors.white : color, size: 50),
+                Text(
+                  title,
+                  style: TextStyle(color: isActive ? Colors.white : color, fontSize: 16),
+                ),
+                Text(
+                  'Inclinação: $inclinationLevel',
+                  style: TextStyle(color: isActive ? Colors.white : color, fontSize: 12),
+                ),
+              ],
+            ),
           ),
         ),
       ),
