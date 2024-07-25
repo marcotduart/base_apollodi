@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'dart:math';
 import 'bluetooth_screen.dart';
 import 'pressure_screen.dart';
 
@@ -8,71 +7,72 @@ void sendCommand(String data) async {
   if (BluetoothScreen.targetCharacteristic != null) {
     await BluetoothScreen.targetCharacteristic!.write(data.codeUnits);
   }
-} // Função para enviar comandos a partir da característica principal 
+}
 
 class LancamentoManualScreen extends StatefulWidget {
   @override
   _LancamentoManualScreenState createState() => _LancamentoManualScreenState();
-} // Criando a tela de lançamento manual
+}
 
 class _LancamentoManualScreenState extends State<LancamentoManualScreen> {
-  String inclinationLevel = 'N/A'; // Definindo variável para exibir níve de inclinção
-  Timer? _timer; // Definindo timer para atualizar dados de inclinação periodicamente
-  Timer? timer; // Definindo timer para atualizar dados de pressão periodicamente
+  String inclinationLevel = 'N/A';
+  Timer? _timer;
 
-  final String inclinationUuid = '0f1d2df9-f709-4633-bb27-0c52e13f748a'; // Define variável com Uuid dos dados de inclinação
-
-  void handleButtonPress(String commandOn) {
-    sendCommand(commandOn);
-  } // Função que identifica quando o botão está pressionado para o envio apenas os comandos de ligar
-
-  void handleButtonRelease(String commandOff) {
-    sendCommand(commandOff);
-  } // Função que identifica quando o botão não está pressionado para o envio apenas os comandos de desligar
+  Map<String, bool> buttonStates = {
+    'Ignitar': false,
+    'Agitar': false,
+    'Inclinar': false,
+    'Alertar': false,
+    'Disparar': false,
+    'Abortar': false,
+  };
 
   @override
   void initState() {
     super.initState();
-    timer = Timer.periodic(Duration(seconds: 1), (Timer t) => fetchInclinationData());
-  } // Comando que permite o timer periodico relacionado aos dados de inclinação
+    _timer = Timer.periodic(Duration(seconds: 1), (Timer t) => fetchInclinationData());
+  }
 
   @override
   void dispose() {
     _timer?.cancel();
-    timer?.cancel();
     super.dispose();
-  } // Comando que desliga o timer periodico relacionado aos dados de inclinação e pressão após o fechamento da tela
+  }
 
   void fetchInclinationData() async {
-    if (BluetoothScreen.targetCharacteristic != null) {
+    if (BluetoothScreen.targetAngleCharacteristic != null) {
       try {
-        List<int> value = await BluetoothScreen.targetCharacteristic!.read();
+        List<int> value = await BluetoothScreen.targetAngleCharacteristic!.read();
         String data = String.fromCharCodes(value);
-        List<String> dataLines = data.split("\n"); // Chama a função de recebimento de dados e os separa por linha
-
-        bool inclinationDataFound = false; // Definindo uma variável booleano que identifica se os dados de inclinação estão sendo recebidos ou não
-
-        for (String line in dataLines) {
-          if (line.contains(inclinationUuid)) {
-            setState(() {
-              inclinationLevel = line.split(inclinationUuid)[1];
-            });
-            inclinationDataFound = true;
-            break;
-          }
-        } // Separa os dados que possuem o Uuid de inclinação dos que não possuem
-
-        if (!inclinationDataFound) {
-          Random random = Random();
-          double randomInclination = random.nextDouble() * 90;
-          setState(() {
-            inclinationLevel = randomInclination.toStringAsFixed(2);
-          });
-        } // Caso os dados não sejam recebidos, gerar uma inclinação aleatória 
+        setState(() {
+          inclinationLevel = data;
+        });
       } catch (e) {
-        print("Erro ao ler os dados do Bluetooth: $e"); // Nesse caso, exibir uma mensagem de erro
+        print("Erro ao ler os dados de inclinação: $e");
       }
     }
+  }
+
+  void _resetAllButtons() {
+    setState(() {
+      buttonStates.keys.forEach((title) {
+        buttonStates[title] = false;
+      });
+    });
+  }
+
+  void handleButtonPress(String title, String commandOn) {
+    sendCommand(commandOn);
+    setState(() {
+      buttonStates[title] = true;
+    });
+  }
+
+  void handleButtonRelease(String title, String commandOff) {
+    sendCommand(commandOff);
+    setState(() {
+      buttonStates[title] = false;
+    });
   }
 
   @override
@@ -91,32 +91,97 @@ class _LancamentoManualScreenState extends State<LancamentoManualScreen> {
               crossAxisCount: 2,
               shrinkWrap: true,
               physics: NeverScrollableScrollPhysics(),
-              children: [
-                buildButton(context, 'Ignitar', Icons.whatshot, Colors.green, 'L11', 'L10'),
-                buildButton(context, 'Agitar', Icons.waves, Colors.green, 'L21', 'L20'),
-                buildInclinationButton(context, 'Inclinar', Icons.trending_up, Colors.green, 'L31', 'L30'),
-                buildButton(context, 'Alertar', Icons.warning, Colors.green, 'L41', 'L40'),
-                buildButton(context, 'Disparar', Icons.rocket_launch, Colors.green, 'L51', 'L50'),
-                buildButton(context, 'Abortar', Icons.cancel, Colors.deepOrange, 'L61', 'L60'),
-              ],
+              children: buttonStates.entries.map((entry) {
+                String title = entry.key;
+                bool isActive = entry.value;
+                IconData icon;
+                Color color;
+                String commandOn;
+                String commandOff;
+
+                switch (title) {
+                  case 'Ignitar':
+                    icon = Icons.whatshot;
+                    color = Colors.green;
+                    commandOn = 'L11';
+                    commandOff = 'L10';
+                    break;
+                  case 'Agitar':
+                    icon = Icons.waves;
+                    color = Colors.green;
+                    commandOn = 'L21';
+                    commandOff = 'L20';
+                    break;
+                  case 'Inclinar':
+                    icon = Icons.trending_up;
+                    color = Colors.green;
+                    commandOn = 'L31';
+                    commandOff = 'L30';
+                    break;
+                  case 'Alertar':
+                    icon = Icons.warning;
+                    color = Colors.green;
+                    commandOn = 'L41';
+                    commandOff = 'L40';
+                    break;
+                  case 'Disparar':
+                    icon = Icons.rocket_launch;
+                    color = Colors.green;
+                    commandOn = 'L51';
+                    commandOff = 'L50';
+                    break;
+                  case 'Abortar':
+                    icon = Icons.cancel;
+                    color = Colors.deepOrange;
+                    commandOn = 'L61';
+                    commandOff = 'L60';
+                    break;
+                  default:
+                    icon = Icons.help;
+                    color = Colors.grey;
+                    commandOn = '';
+                    commandOff = '';
+                }
+
+                return title == 'Inclinar'
+                    ? buildInclinationButton(
+                        context,
+                        title,
+                        icon,
+                        color,
+                        commandOn,
+                        commandOff,
+                        isActive,
+                      )
+                    : buildButton(
+                        context,
+                        title,
+                        icon,
+                        color,
+                        commandOn,
+                        commandOff,
+                        isActive,
+                      );
+              }).toList(),
             ),
           ],
         ),
       ),
     );
-  } // Função para criar tela principal e gerar botões 
+  }
 
-  Widget buildButton( // Função para definir variáveis para informações dos botões
+  Widget buildButton(
     BuildContext context,
     String title,
     IconData icon,
     Color color,
     String commandOn,
     String commandOff,
+    bool isActive,
   ) {
-    return GestureDetector( // Função para identificar gesto dos botões e enviar comandos
-      onTapDown: (_) => handleButtonPress(commandOn),
-      onTapUp: (_) => handleButtonRelease(commandOff),
+    return GestureDetector(
+      onTapDown: (_) => handleButtonPress(title, commandOn),
+      onTapUp: (_) => handleButtonRelease(title, commandOff),
       child: Container(
         margin: EdgeInsets.symmetric(vertical: 3, horizontal: 3),
         child: Card(
@@ -125,10 +190,10 @@ class _LancamentoManualScreenState extends State<LancamentoManualScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              Icon(icon, color: color, size: 50),
+              Icon(icon, color: isActive ? color : Colors.grey, size: 50),
               Text(
                 title,
-                style: TextStyle(color: color, fontSize: 16),
+                style: TextStyle(color: isActive ? color : Colors.grey, fontSize: 16),
               ),
             ],
           ),
@@ -144,10 +209,11 @@ class _LancamentoManualScreenState extends State<LancamentoManualScreen> {
     Color color,
     String commandOn,
     String commandOff,
-  ) { // Função para criar botão específico com dados de inclinação 
-    return GestureDetector( // Chama função para detectar gestos
-      onTapDown: (_) => handleButtonPress(commandOn),
-      onTapUp: (_) => handleButtonRelease(commandOff),
+    bool isActive,
+  ) {
+    return GestureDetector(
+      onTapDown: (_) => handleButtonPress(title, commandOn),
+      onTapUp: (_) => handleButtonRelease(title, commandOff),
       child: Container(
         margin: EdgeInsets.symmetric(vertical: 3, horizontal: 3),
         child: Card(
@@ -156,14 +222,14 @@ class _LancamentoManualScreenState extends State<LancamentoManualScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              Icon(icon, color: color, size: 50),
+              Icon(icon, color: isActive ? color : Colors.grey, size: 50),
               Text(
                 title,
-                style: TextStyle(color: color, fontSize: 16),
+                style: TextStyle(color: isActive ? color : Colors.grey, fontSize: 16),
               ),
               Text(
                 'Inclinação: $inclinationLevel',
-                style: TextStyle(color: color, fontSize: 12),
+                style: TextStyle(color: isActive ? color : Colors.grey, fontSize: 12),
               ),
             ],
           ),

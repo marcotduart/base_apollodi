@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'dart:math';
 import 'package:fl_chart/fl_chart.dart';
 import 'bluetooth_screen.dart';
 
@@ -34,29 +33,14 @@ class _PressureDisplayState extends State<PressureDisplay> {
         double pressureValue = double.tryParse(data) ?? 0.0;
         setState(() {
           pressureData.add(FlSpot(pressureData.length.toDouble(), pressureValue));
-          if (pressureData.length > 50) {
+          if (pressureData.length > 20) {
             pressureData.removeAt(0);
           }
         });
       } catch (e) {
         print("Erro ao ler os dados do Bluetooth: $e");
-        addRandomDataPoints();
       }
-    } else {
-      addRandomDataPoints();
     }
-  }
-
-  void addRandomDataPoints() {
-    setState(() {
-      for (int i = 0; i < 5; i++) {
-        double randomValue = Random().nextDouble() * 500;
-        pressureData.add(FlSpot(pressureData.length.toDouble(), randomValue));
-        if (pressureData.length > 20) {
-          pressureData.removeAt(0);
-        }
-      }
-    });
   }
 
   @override
