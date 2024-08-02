@@ -11,12 +11,12 @@ class PressureDisplay extends StatefulWidget {
 class _PressureDisplayState extends State<PressureDisplay> {
   List<FlSpot> pressureData = [];
   Timer? timer;
-  final String pressureUuid = '0972EF8C-7613-4075-AD52-756F33D4DA91';
 
   @override
   void initState() {
     super.initState();
-    timer = Timer.periodic(Duration(seconds: 1), (Timer t) => fetchPressureData());
+    timer =
+        Timer.periodic(Duration(seconds: 1), (Timer t) => fetchPressureData());
   }
 
   @override
@@ -28,13 +28,17 @@ class _PressureDisplayState extends State<PressureDisplay> {
   void fetchPressureData() async {
     if (BluetoothScreen.targetPressureCharacteristic != null) {
       try {
-        List<int> value = await BluetoothScreen.targetPressureCharacteristic!.read();
+        List<int> value =
+            await BluetoothScreen.targetPressureCharacteristic!.read();
         String data = String.fromCharCodes(value);
         double pressureValue = double.tryParse(data) ?? 0.0;
         setState(() {
-          pressureData.add(FlSpot(pressureData.length.toDouble(), pressureValue));
-          if (pressureData.length > 20) {
+          pressureData
+              .add(FlSpot(pressureData.length.toDouble(), pressureValue));
+          if (pressureData.length > 50) {
+            // Limita a quantidade de pontos no gráfico
             pressureData.removeAt(0);
+            print(pressureValue);
           }
         });
       } catch (e) {
@@ -78,7 +82,10 @@ class _PressureDisplayState extends State<PressureDisplay> {
                       belowBarData: BarAreaData(
                         show: true,
                         gradient: LinearGradient(
-                          colors: [Colors.blue.withOpacity(0.3), Colors.lightBlue.withOpacity(0.3)],
+                          colors: [
+                            Colors.blue.withOpacity(0.3),
+                            Colors.lightBlue.withOpacity(0.3)
+                          ],
                           begin: Alignment.centerLeft,
                           end: Alignment.centerRight,
                         ),

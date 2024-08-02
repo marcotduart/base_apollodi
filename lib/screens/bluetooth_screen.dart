@@ -16,10 +16,14 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
   BluetoothDevice? connectedDevice;
   bool isScanning = false;
   final Duration scanInterval = Duration(seconds: 15);
-  final TextEditingController angleController = TextEditingController(); // Adicionando componente de adicionar texto para ângulo
-  final TextEditingController pressureController = TextEditingController();  // Adicionando componente de adicionar texto para ângulo
-  String receivedPressureData = ''; // Definindo varíavel para dados de pressão recebidos
-  String receivedAngleData = ''; // Definindo varíavel para dados de ângulo recebidos
+  final TextEditingController angleController =
+      TextEditingController(); // Adicionando componente de adicionar texto para ângulo
+  final TextEditingController pressureController =
+      TextEditingController(); // Adicionando componente de adicionar texto para ângulo
+  String receivedPressureData =
+      ''; // Definindo varíavel para dados de pressão recebidos
+  String receivedAngleData =
+      ''; // Definindo varíavel para dados de ângulo recebidos
   String receivedData = ''; // Definindo varíavel para dados recebidos
 
   @override
@@ -35,12 +39,13 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
   } // Função para requisitar permissões
 
   void scanForDevices() async {
-    if (isScanning || connectedDevice != null) return; // Função para escanear dispositivo 
+    if (isScanning || connectedDevice != null)
+      return; // Função para escanear dispositivo
 
     setState(() {
       isScanning = true; // Definindo variável booleando para estado do Scan
       devicesList.clear(); // Limpando lista e dispostiviso Bluetooth
-    }); 
+    });
 
     FlutterBluePlus.startScan(timeout: Duration(seconds: 5)); // Iniciando scan
 
@@ -63,23 +68,23 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
       await Future.delayed(scanInterval);
       scanForDevicesPeriodically();
     }
-  } // Função para iniciar Scan periodicamente 
+  } // Função para iniciar Scan periodicamente
 
   void connectToDevice(BluetoothDevice device) async {
-     await device.connect();
+    await device.connect();
     setState(() {
       connectedDevice = device;
-      isScanning = false; 
+      isScanning = false;
     }); // Função para conectar dispositivo selecionado da lista
-    FlutterBluePlus.stopScan(); 
+    FlutterBluePlus.stopScan();
     discoverServices(device);
 
     sendCommand('L10'); // Desligar IGNITAR
-  sendCommand('L20'); // Desligar AGITAR
-  sendCommand('L30'); // Desligar INCLINAR
-  sendCommand('L40'); // Desligar ALERTAR
-  sendCommand('L50'); // Desligar DISPARAR
-  sendCommand('L60'); // Desligar ABORTAR
+    sendCommand('L20'); // Desligar AGITAR
+    sendCommand('L30'); // Desligar INCLINAR
+    sendCommand('L40'); // Desligar ALERTAR
+    sendCommand('L50'); // Desligar DISPARAR
+    sendCommand('L60'); // Desligar ABORTAR
   } // Função para enviar comando de desligar todos os botões após conectado
 
   void disconnectFromDevice() async {
@@ -90,18 +95,19 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
         BluetoothScreen.targetCharacteristic = null;
         BluetoothScreen.targetPressureCharacteristic = null;
         BluetoothScreen.targetAngleCharacteristic = null;
-        receivedData = ''; 
+        receivedData = '';
         receivedPressureData = '';
         receivedAngleData = '';
       });
     }
   } // Função para desconectar dispositivo
 
-void discoverPressaoAnguloServices(BluetoothDevice device) async {
+  void discoverPressureServices(BluetoothDevice device) async {
     List<BluetoothService> services = await device.discoverServices();
     for (BluetoothService service in services) {
       for (BluetoothCharacteristic characteristic in service.characteristics) {
-        if (characteristic.uuid.toString() == '0972EF8C-7613-4075-AD52-756F33D4DA91') {
+        if (characteristic.uuid.toString() ==
+            '0972EF8C-7613-4075-AD52-756F33D4DA91') {
           setState(() {
             BluetoothScreen.targetPressureCharacteristic = characteristic;
           });
@@ -109,9 +115,20 @@ void discoverPressaoAnguloServices(BluetoothDevice device) async {
           characteristic.value.listen((value) {
             setState(() {
               receivedPressureData = String.fromCharCodes(value);
-            });
+              print(receivedPressureData);
+               });
           });
-        } else if (characteristic.uuid.toString() == '0f1d2df9-f709-4633-bb27-0c52e13f748a') {
+        }
+      }
+    }
+  }
+
+void discoverAngleServices(BluetoothDevice device) async {
+    List<BluetoothService> services = await device.discoverServices();
+    for (BluetoothService service in services) {
+      for (BluetoothCharacteristic characteristic in service.characteristics) {
+        if (characteristic.uuid.toString() ==
+        '0f1d2df9-f709-4633-bb27-0c52e13f748a') {
           setState(() {
             BluetoothScreen.targetAngleCharacteristic = characteristic;
           });
@@ -119,6 +136,7 @@ void discoverPressaoAnguloServices(BluetoothDevice device) async {
           characteristic.value.listen((value) {
             setState(() {
               receivedAngleData = String.fromCharCodes(value);
+              print(receivedAngleData);
             });
           });
         }
@@ -140,12 +158,15 @@ void discoverPressaoAnguloServices(BluetoothDevice device) async {
           characteristic.value.listen((value) {
             setState(() {
               receivedData = String.fromCharCodes(value);
+              print(receivedData);
+              print(receivedPressureData);
+              print(receivedAngleData);
             });
           });
         }
       }
     }
-  } // Função para identificar características Bluetooth 
+  } // Função para identificar características Bluetooth
 
   void sendCommand(String data) async {
     if (BluetoothScreen.targetCharacteristic != null) {
@@ -175,8 +196,9 @@ void discoverPressaoAnguloServices(BluetoothDevice device) async {
         itemBuilder: (context, index) {
           BluetoothDevice device = devicesList[index];
           return ListTile(
-            title: Text(
-                device.name.isNotEmpty ? device.name : 'Dispositivo desconhecido'),
+            title: Text(device.name.isNotEmpty
+                ? device.name
+                : 'Dispositivo desconhecido'),
             subtitle: Text(device.id.toString()),
             trailing: ElevatedButton(
               onPressed: () => connectToDevice(device),
@@ -199,17 +221,21 @@ void discoverPressaoAnguloServices(BluetoothDevice device) async {
         child: connectedDevice != null
             ? Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-              
                 children: [
-                  Row(
-                    children: [Icon(Icons.bluetooth, size:40),
-                  SizedBox(height: 20,),
-                  Text("Bluetooth", style: TextStyle(fontSize: 24))]),
-                  Text('Conectado a ${connectedDevice!.name}', style: TextStyle(fontSize: 18)),
+                  Row(children: [
+                    Icon(Icons.bluetooth, size: 40),
+                    SizedBox(
+                      height: 20,
+                    ),
+                    Text("Bluetooth", style: TextStyle(fontSize: 24))
+                  ]),
+                  Text('Conectado a ${connectedDevice!.name}',
+                      style: TextStyle(fontSize: 18)),
                   SizedBox(height: 20),
                   TextField(
                     controller: angleController,
-                    decoration: InputDecoration(labelText: 'Ângulo de Inclinação'),
+                    decoration:
+                        InputDecoration(labelText: 'Ângulo de Inclinação'),
                   ),
                   TextField(
                     controller: pressureController,
