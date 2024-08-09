@@ -17,28 +17,26 @@ class _PressureDisplayState extends State<PressureDisplay> {
     super.initState();
     timer =
         Timer.periodic(Duration(seconds: 1), (Timer t) => fetchPressureData());
+    BluetoothScreen.receivedPressureData.addListener(fetchPressureData);
   }
 
   @override
   void dispose() {
     timer?.cancel();
     super.dispose();
+    BluetoothScreen.receivedPressureData.removeListener(fetchPressureData);
   }
 
   void fetchPressureData() async {
     if (BluetoothScreen.targetPressureCharacteristic != null) {
       try {
-        List<int> value =
-            await BluetoothScreen.targetPressureCharacteristic!.read();
-        String data = String.fromCharCodes(value);
+        String data = BluetoothScreen.receivedPressureData.value;
         double pressureValue = double.tryParse(data) ?? 0.0;
         setState(() {
-          pressureData
-              .add(FlSpot(pressureData.length.toDouble(), pressureValue));
+          print('$data');
+          pressureData.add(FlSpot(data.length.toDouble(), pressureValue));
           if (pressureData.length > 50) {
-            // Limita a quantidade de pontos no gráfico
             pressureData.removeAt(0);
-            print(pressureValue);
           }
         });
       } catch (e) {
@@ -55,7 +53,7 @@ class _PressureDisplayState extends State<PressureDisplay> {
         child: Column(
           children: <Widget>[
             Text(
-              '${pressureData.isNotEmpty ? pressureData.last.y.toStringAsFixed(2) : "Indisponível"} psi',
+              pressureData.isNotEmpty ? '$pressureData psi' : '0.0 psi',
               style: TextStyle(fontSize: 24),
             ),
             SizedBox(height: 20),

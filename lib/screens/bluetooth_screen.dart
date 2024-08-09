@@ -6,61 +6,56 @@ class BluetoothScreen extends StatefulWidget {
   static BluetoothCharacteristic? targetCharacteristic;
   static BluetoothCharacteristic? targetPressureCharacteristic;
   static BluetoothCharacteristic? targetAngleCharacteristic;
+  static ValueNotifier<String> receivedPressureData = ValueNotifier('');
 
   @override
   _BluetoothScreenState createState() => _BluetoothScreenState();
-} // Criando tela Bluetooth
+}
 
 class _BluetoothScreenState extends State<BluetoothScreen> {
   List<BluetoothDevice> devicesList = [];
   BluetoothDevice? connectedDevice;
   bool isScanning = false;
   final Duration scanInterval = Duration(seconds: 15);
-  final TextEditingController angleController =
-      TextEditingController(); // Adicionando componente de adicionar texto para ângulo
-  final TextEditingController pressureController =
-      TextEditingController(); // Adicionando componente de adicionar texto para ângulo
-  String receivedPressureData =
-      ''; // Definindo varíavel para dados de pressão recebidos
-  String receivedAngleData =
-      ''; // Definindo varíavel para dados de ângulo recebidos
-  String receivedData = ''; // Definindo varíavel para dados recebidos
+  final TextEditingController angleController = TextEditingController();
+  final TextEditingController pressureController = TextEditingController();
+  String receivedAngleData = '';
+  String receivedData = '';
 
   @override
   void initState() {
     super.initState();
     requestPermissions();
     scanForDevicesPeriodically();
-  } // Inicializand funções da tela
+  }
 
   Future<void> requestPermissions() async {
     await Permission.bluetooth.request();
     await Permission.location.request();
-  } // Função para requisitar permissões
+  }
 
   void scanForDevices() async {
-    if (isScanning || connectedDevice != null)
-      return; // Função para escanear dispositivo
+    if (isScanning || connectedDevice != null) return;
 
     setState(() {
-      isScanning = true; // Definindo variável booleando para estado do Scan
-      devicesList.clear(); // Limpando lista e dispostiviso Bluetooth
+      isScanning = true;
+      devicesList.clear();
     });
 
-    FlutterBluePlus.startScan(timeout: Duration(seconds: 5)); // Iniciando scan
+    FlutterBluePlus.startScan(timeout: Duration(seconds: 5));
 
     FlutterBluePlus.scanResults.listen((results) {
       setState(() {
         devicesList = results.map((r) => r.device).toList();
       });
-    }); // Construindo lista dos dispositivos Bluetooth pareáveis a partir dos resultados do Scan
+    });
 
     await Future.delayed(Duration(seconds: 5));
     FlutterBluePlus.stopScan();
     setState(() {
       isScanning = false;
     });
-  } // Função para parar Scan a cada 5 segundos
+  }
 
   void scanForDevicesPeriodically() async {
     if (connectedDevice == null) {
@@ -68,24 +63,26 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
       await Future.delayed(scanInterval);
       scanForDevicesPeriodically();
     }
-  } // Função para iniciar Scan periodicamente
+  }
 
   void connectToDevice(BluetoothDevice device) async {
     await device.connect();
     setState(() {
       connectedDevice = device;
       isScanning = false;
-    }); // Função para conectar dispositivo selecionado da lista
+    });
     FlutterBluePlus.stopScan();
     discoverServices(device);
+    discoverPressureServices(device);
+    discoverAngleServices(device);
 
-    sendCommand('L10'); // Desligar IGNITAR
-    sendCommand('L20'); // Desligar AGITAR
-    sendCommand('L30'); // Desligar INCLINAR
-    sendCommand('L40'); // Desligar ALERTAR
-    sendCommand('L50'); // Desligar DISPARAR
-    sendCommand('L60'); // Desligar ABORTAR
-  } // Função para enviar comando de desligar todos os botões após conectado
+    sendCommand('L10');
+    sendCommand('L20');
+    sendCommand('L30');
+    sendCommand('L40');
+    sendCommand('L50');
+    sendCommand('L60');
+  }
 
   void disconnectFromDevice() async {
     if (connectedDevice != null) {
@@ -96,39 +93,38 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
         BluetoothScreen.targetPressureCharacteristic = null;
         BluetoothScreen.targetAngleCharacteristic = null;
         receivedData = '';
-        receivedPressureData = '';
+        BluetoothScreen.receivedPressureData.value = '';
         receivedAngleData = '';
       });
     }
-  } // Função para desconectar dispositivo
+  }
 
   void discoverPressureServices(BluetoothDevice device) async {
     List<BluetoothService> services = await device.discoverServices();
     for (BluetoothService service in services) {
       for (BluetoothCharacteristic characteristic in service.characteristics) {
         if (characteristic.uuid.toString() ==
-            '0972EF8C-7613-4075-AD52-756F33D4DA91') {
+            '0972ef8c-7613-4075-ad52-756f33d4da91') {
           setState(() {
             BluetoothScreen.targetPressureCharacteristic = characteristic;
           });
           characteristic.setNotifyValue(true);
           characteristic.value.listen((value) {
-            setState(() {
-              receivedPressureData = String.fromCharCodes(value);
-              print(receivedPressureData);
-               });
+            String data = String.fromCharCodes(value);
+            print("Dados de Pressão Recebidos: $data");
+            BluetoothScreen.receivedPressureData.value = data;
           });
         }
       }
     }
   }
 
-void discoverAngleServices(BluetoothDevice device) async {
+  void discoverAngleServices(BluetoothDevice device) async {
     List<BluetoothService> services = await device.discoverServices();
     for (BluetoothService service in services) {
       for (BluetoothCharacteristic characteristic in service.characteristics) {
         if (characteristic.uuid.toString() ==
-        '0f1d2df9-f709-4633-bb27-0c52e13f748a') {
+            '0f1d2df9-f709-4633-bb27-0c52e13f748a') {
           setState(() {
             BluetoothScreen.targetAngleCharacteristic = characteristic;
           });
@@ -136,7 +132,6 @@ void discoverAngleServices(BluetoothDevice device) async {
           characteristic.value.listen((value) {
             setState(() {
               receivedAngleData = String.fromCharCodes(value);
-              print(receivedAngleData);
             });
           });
         }
@@ -159,20 +154,18 @@ void discoverAngleServices(BluetoothDevice device) async {
             setState(() {
               receivedData = String.fromCharCodes(value);
               print(receivedData);
-              print(receivedPressureData);
-              print(receivedAngleData);
             });
           });
         }
       }
     }
-  } // Função para identificar características Bluetooth
+  }
 
   void sendCommand(String data) async {
     if (BluetoothScreen.targetCharacteristic != null) {
       await BluetoothScreen.targetCharacteristic!.write(data.codeUnits);
     }
-  } // Função para enviar comando para o via Bluetooth
+  }
 
   void applySettings() {
     String angle = angleController.text;
@@ -183,7 +176,7 @@ void discoverAngleServices(BluetoothDevice device) async {
       content: Text('As configurações foram aplicadas'),
       duration: Duration(seconds: 2),
     ));
-  } // Função para aplicar configuração enviando comandos via Bluetooth
+  }
 
   Widget buildBluetoothDeviceList() {
     if (isScanning) {
@@ -208,7 +201,7 @@ void discoverAngleServices(BluetoothDevice device) async {
         },
       );
     }
-  } // Função para criar widget com lista dos dipositivos Bluetooth e botões para conexão
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -234,12 +227,12 @@ void discoverAngleServices(BluetoothDevice device) async {
                   SizedBox(height: 20),
                   TextField(
                     controller: angleController,
-                    decoration:
-                        InputDecoration(labelText: 'Ângulo de Inclinação'),
+                    decoration: InputDecoration(labelText: 'Ângulo'),
                   ),
                   TextField(
                     controller: pressureController,
-                    decoration: InputDecoration(labelText: 'Pressão Máxima'),
+                    decoration:
+                        InputDecoration(labelText: '${BluetoothScreen.receivedPressureData.value}'),
                   ),
                   SizedBox(height: 20),
                   ElevatedButton(
