@@ -15,35 +15,29 @@ class _PressureDisplayState extends State<PressureDisplay> {
   @override
   void initState() {
     super.initState();
-    timer =
-        Timer.periodic(Duration(seconds: 1), (Timer t) => fetchPressureData());
-    BluetoothScreen.receivedPressureData.addListener(fetchPressureData);
+    timer = Timer.periodic(Duration(seconds: 1), (Timer t) => fetchPressureData());
+    if (BluetoothScreen.targetPressureCharacteristic != null) {
+      BluetoothScreen.targetPressureCharacteristic!.setNotifyValue(true);
+      BluetoothScreen.targetPressureCharacteristic!.value.listen((value) {
+        String data = String.fromCharCodes(value);
+        double pressureValue = double.tryParse(data) ?? 0.0;
+        setState(() {
+          pressureData.add(FlSpot(DateTime.now().millisecondsSinceEpoch.toDouble(), pressureValue));
+          if (pressureData.length > 50) {
+            pressureData.removeAt(0);
+          }
+        });
+      });
+    }
   }
 
   @override
   void dispose() {
     timer?.cancel();
     super.dispose();
-    BluetoothScreen.receivedPressureData.removeListener(fetchPressureData);
   }
 
-  void fetchPressureData() async {
-    if (BluetoothScreen.targetPressureCharacteristic != null) {
-      try {
-        String data = BluetoothScreen.receivedPressureData.value;
-        double pressureValue = double.tryParse(data) ?? 0.0;
-        setState(() {
-          print('$data');
-          pressureData.add(FlSpot(data.length.toDouble(), pressureValue));
-          if (pressureData.length > 50) {
-            pressureData.removeAt(0);
-          }
-        });
-      } catch (e) {
-        print("Erro ao ler os dados do Bluetooth: $e");
-      }
-    }
-  }
+  void fetchPressureData() {}
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +47,7 @@ class _PressureDisplayState extends State<PressureDisplay> {
         child: Column(
           children: <Widget>[
             Text(
-              pressureData.isNotEmpty ? '$pressureData psi' : '0.0 psi',
+              pressureData.isNotEmpty ? '${pressureData.last.y} psi' : '0.0 psi',
               style: TextStyle(fontSize: 24),
             ),
             SizedBox(height: 20),

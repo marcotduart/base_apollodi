@@ -16,7 +16,7 @@ class LancamentoManualScreen extends StatefulWidget {
 
 class _LancamentoManualScreenState extends State<LancamentoManualScreen>
     with SingleTickerProviderStateMixin {
-  String inclinationLevel = 'N/A';
+  String inclinationLevel = 'Sem dados';
   Timer? _timer;
   Map<String, bool> buttonStates = {
     'Ignitar': false,
@@ -237,7 +237,7 @@ class _LancamentoManualScreenState extends State<LancamentoManualScreen>
                   style: TextStyle(color: isActive ? Colors.white : color, fontSize: 16),
                 ),
                 Text(
-                  'Inclinação: $inclinationLevel',
+                  'Inclinação: ${BluetoothScreen.receivedAngleData.value}',
                   style: TextStyle(color: isActive ? Colors.white : color, fontSize: 12),
                 ),
               ],
