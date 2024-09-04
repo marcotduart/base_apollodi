@@ -32,7 +32,8 @@ class _LancamentoManualScreenState extends State<LancamentoManualScreen>
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(Duration(seconds: 1), (Timer t) => fetchInclinationData());
+    _timer = Timer.periodic(
+        Duration(seconds: 1), (Timer t) => fetchInclinationData());
     _controller = AnimationController(
       duration: const Duration(milliseconds: 200),
       vsync: this,
@@ -50,7 +51,8 @@ class _LancamentoManualScreenState extends State<LancamentoManualScreen>
   void fetchInclinationData() async {
     if (BluetoothScreen.targetAngleCharacteristic != null) {
       try {
-        List<int> value = await BluetoothScreen.targetAngleCharacteristic!.read();
+        List<int> value =
+            await BluetoothScreen.targetAngleCharacteristic!.read();
         String data = String.fromCharCodes(value);
         setState(() {
           inclinationLevel = data;
@@ -184,6 +186,8 @@ class _LancamentoManualScreenState extends State<LancamentoManualScreen>
     return GestureDetector(
       onTapDown: (_) => handleButtonPress(title, commandOn),
       onTapUp: (_) => handleButtonRelease(title, commandOff),
+      onTapCancel: () => handleButtonRelease(title, commandOff),
+      onPanEnd: (_) => handleButtonRelease(title, commandOff),
       child: ScaleTransition(
         scale: _animation!,
         child: Container(
@@ -191,14 +195,16 @@ class _LancamentoManualScreenState extends State<LancamentoManualScreen>
           child: Card(
             color: isActive ? color : Colors.white,
             elevation: 1,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
                 Icon(icon, color: isActive ? Colors.white : color, size: 50),
                 Text(
                   title,
-                  style: TextStyle(color: isActive ? Colors.white : color, fontSize: 16),
+                  style: TextStyle(
+                      color: isActive ? Colors.white : color, fontSize: 16),
                 ),
               ],
             ),
@@ -220,6 +226,8 @@ class _LancamentoManualScreenState extends State<LancamentoManualScreen>
     return GestureDetector(
       onTapDown: (_) => handleButtonPress(title, commandOn),
       onTapUp: (_) => handleButtonRelease(title, commandOff),
+      onTapCancel: () => handleButtonRelease(title, commandOff),
+      onPanEnd: (_) => handleButtonRelease(title, commandOff),
       child: ScaleTransition(
         scale: _animation!,
         child: Container(
@@ -227,18 +235,16 @@ class _LancamentoManualScreenState extends State<LancamentoManualScreen>
           child: Card(
             color: isActive ? color : Colors.white,
             elevation: 1,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
                 Icon(icon, color: isActive ? Colors.white : color, size: 50),
                 Text(
                   title,
-                  style: TextStyle(color: isActive ? Colors.white : color, fontSize: 16),
-                ),
-                Text(
-                  'Inclinação: ${BluetoothScreen.receivedAngleData.value}',
-                  style: TextStyle(color: isActive ? Colors.white : color, fontSize: 12),
+                  style: TextStyle(
+                      color: isActive ? Colors.white : color, fontSize: 16),
                 ),
               ],
             ),
@@ -247,10 +253,10 @@ class _LancamentoManualScreenState extends State<LancamentoManualScreen>
       ),
     );
   }
-}
 
-void main() {
-  runApp(MaterialApp(
-    home: LancamentoManualScreen(),
-  ));
+  void main() {
+    runApp(MaterialApp(
+      home: LancamentoManualScreen(),
+    ));
+  }
 }

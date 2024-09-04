@@ -11,21 +11,38 @@ class PressureDisplay extends StatefulWidget {
 class _PressureDisplayState extends State<PressureDisplay> {
   List<FlSpot> pressureData = [];
   Timer? timer;
+  String inclinationLevel = 'Sem dados';
+  late DateTime startTime; // Adicione esta linha
 
   @override
   void initState() {
     super.initState();
+    startTime = DateTime.now(); // Inicialize o tempo de início aqui
     timer = Timer.periodic(Duration(seconds: 1), (Timer t) => fetchPressureData());
+    fetchInclinationData(); // Chama para atualizar os dados de inclinação
     if (BluetoothScreen.targetPressureCharacteristic != null) {
       BluetoothScreen.targetPressureCharacteristic!.setNotifyValue(true);
       BluetoothScreen.targetPressureCharacteristic!.value.listen((value) {
         String data = String.fromCharCodes(value);
         double pressureValue = double.tryParse(data) ?? 0.0;
         setState(() {
-          pressureData.add(FlSpot(DateTime.now().millisecondsSinceEpoch.toDouble(), pressureValue));
+          double elapsedTime = DateTime.now().difference(startTime).inSeconds.toDouble(); // Modifique o cálculo do tempo
+          pressureData.add(FlSpot(elapsedTime, pressureValue));
           if (pressureData.length > 50) {
             pressureData.removeAt(0);
           }
+        });
+      });
+    }
+  }
+
+  void fetchInclinationData() async {
+    if (BluetoothScreen.targetAngleCharacteristic != null) {
+      BluetoothScreen.targetAngleCharacteristic!.setNotifyValue(true);
+      BluetoothScreen.targetAngleCharacteristic!.value.listen((value) {
+        String data = String.fromCharCodes(value);
+        setState(() {
+          inclinationLevel = data;
         });
       });
     }
@@ -38,6 +55,10 @@ class _PressureDisplayState extends State<PressureDisplay> {
   }
 
   void fetchPressureData() {}
+
+  String formatXAxis(double value) {
+    return '${value.toInt()}s';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,9 +77,19 @@ class _PressureDisplayState extends State<PressureDisplay> {
               child: LineChart(
                 LineChartData(
                   minY: 0,
-                  maxY: 500,
+                  maxY: 250,
                   borderData: FlBorderData(show: true),
-                  titlesData: FlTitlesData(show: true),
+                  titlesData: FlTitlesData(
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          return Text(formatXAxis(value));
+                        },
+                        reservedSize: 30,
+                      ),
+                    ),
+                  ),
                   gridData: FlGridData(show: true),
                   lineBarsData: [
                     LineChartBarData(
@@ -87,6 +118,12 @@ class _PressureDisplayState extends State<PressureDisplay> {
                 ),
               ),
             ),
+            SizedBox(height: 20),
+            Text(
+              'Inclinação: $inclinationLevel',
+              style: TextStyle(fontSize: 16, color: Colors.black),
+            ),
+            SizedBox(height: 20),
           ],
         ),
       ),

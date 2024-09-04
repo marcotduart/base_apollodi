@@ -34,28 +34,38 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
     await Permission.location.request();
   }
 
-  void scanForDevices() async {
-    if (isScanning || connectedDevice != null) return;
+ void scanForDevices() async {
+  if (isScanning || connectedDevice != null) return;
 
-    setState(() {
-      isScanning = true;
-      devicesList.clear();
-    });
+  setState(() {
+    isScanning = true;
+    devicesList.clear();
+  });
 
-    FlutterBluePlus.startScan(timeout: Duration(seconds: 5));
+  FlutterBluePlus.startScan(timeout: Duration(seconds: 5));
 
-    FlutterBluePlus.scanResults.listen((results) {
+  FlutterBluePlus.scanResults.listen((results) async {
+    for (var result in results) {
+      BluetoothDevice device = result.device;
+
+      if (device.name == 'MOBFOG-IFRN') {
+        await FlutterBluePlus.stopScan(); // Parar a varredura
+        connectToDevice(device); // Conectar automaticamente
+        return;
+      }
+
       setState(() {
-        devicesList = results.map((r) => r.device).toList();
+        devicesList.add(device);
       });
-    });
+    }
+  });
 
-    await Future.delayed(Duration(seconds: 5));
-    FlutterBluePlus.stopScan();
-    setState(() {
-      isScanning = false;
-    });
-  }
+  await Future.delayed(Duration(seconds: 5));
+  FlutterBluePlus.stopScan();
+  setState(() {
+    isScanning = false;
+  });
+}
 
   void scanForDevicesPeriodically() async {
     if (connectedDevice == null) {
@@ -234,7 +244,7 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
                     controller: pressureController,
                     decoration: InputDecoration(
                         labelText:
-                            '${BluetoothScreen.receivedPressureData.value}'),
+                            'Pressão'),
                   ),
                   SizedBox(height: 20),
                   ElevatedButton(
