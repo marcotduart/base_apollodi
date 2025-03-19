@@ -85,91 +85,108 @@ class _LancamentoManualScreenState extends State<LancamentoManualScreen>
       appBar: AppBar(
         title: Text('Lançamento Manual'),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            PressureDisplay(),
-            SizedBox(height: 15),
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              children: buttonStates.entries.map((entry) {
-                String title = entry.key;
-                bool isActive = entry.value;
-                IconData icon;
-                Color color;
-                String commandOn;
-                String commandOff;
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          // Adapta o layout com base na largura da tela
+          double iconSize = 50;
+          EdgeInsetsGeometry margin = EdgeInsets.symmetric(vertical: 3, horizontal: 3);
 
-                switch (title) {
-                  case 'Ignitar':
-                    icon = Icons.whatshot;
-                    color = Colors.green;
-                    commandOn = 'L11';
-                    commandOff = 'L10';
-                    break;
-                  case 'Agitar':
-                    icon = Icons.waves;
-                    color = Colors.green;
-                    commandOn = 'L21';
-                    commandOff = 'L20';
-                    break;
-                  case 'Inclinar':
-                    icon = Icons.trending_up;
-                    color = Colors.green;
-                    commandOn = 'L31';
-                    commandOff = 'L30';
-                    break;
-                  case 'Alertar':
-                    icon = Icons.warning;
-                    color = Colors.green;
-                    commandOn = 'L41';
-                    commandOff = 'L40';
-                    break;
-                  case 'Disparar':
-                    icon = Icons.rocket_launch;
-                    color = Colors.green;
-                    commandOn = 'L51';
-                    commandOff = 'L50';
-                    break;
-                  case 'Abortar':
-                    icon = Icons.cancel;
-                    color = Colors.deepOrange;
-                    commandOn = 'L61';
-                    commandOff = 'L60';
-                    break;
-                  default:
-                    icon = Icons.help;
-                    color = Colors.grey;
-                    commandOn = '';
-                    commandOff = '';
-                }
+          if (constraints.maxWidth > 600) {
+            iconSize = 40; 
+            margin = EdgeInsets.symmetric(vertical: 6, horizontal: 6);
+          }
 
-                return title == 'Inclinar'
-                    ? buildInclinationButton(
-                        context,
-                        title,
-                        icon,
-                        color,
-                        commandOn,
-                        commandOff,
-                        isActive,
-                      )
-                    : buildButton(
-                        context,
-                        title,
-                        icon,
-                        color,
-                        commandOn,
-                        commandOff,
-                        isActive,
-                      );
-              }).toList(),
+          return SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                PressureDisplay(),
+                SizedBox(height: 15),
+                GridView.count(
+                  crossAxisCount: constraints.maxWidth > 600 ? 3 : 2, 
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  children: buttonStates.entries.map((entry) {
+                    String title = entry.key;
+                    bool isActive = entry.value;
+                    IconData icon;
+                    Color color;
+                    String commandOn;
+                    String commandOff;
+
+                    switch (title) {
+                      case 'Ignitar':
+                        icon = Icons.whatshot;
+                        color = Colors.green;
+                        commandOn = 'L11';
+                        commandOff = 'L10';
+                        break;
+                      case 'Agitar':
+                        icon = Icons.waves;
+                        color = Colors.green;
+                        commandOn = 'L21';
+                        commandOff = 'L20';
+                        break;
+                      case 'Inclinar':
+                        icon = Icons.trending_up;
+                        color = Colors.green;
+                        commandOn = 'L31';
+                        commandOff = 'L30';
+                        break;
+                      case 'Alertar':
+                        icon = Icons.warning;
+                        color = Colors.green;
+                        commandOn = 'L41';
+                        commandOff = 'L40';
+                        break;
+                      case 'Disparar':
+                        icon = Icons.rocket_launch;
+                        color = Colors.green;
+                        commandOn = 'L51';
+                        commandOff = 'L50';
+                        break;
+                      case 'Abortar':
+                        icon = Icons.cancel;
+                        color = Colors.deepOrange;
+                        commandOn = 'L61';
+                        commandOff = 'L60';
+                        break;
+                      default:
+                        icon = Icons.help;
+                        color = Colors.grey;
+                        commandOn = '';
+                        commandOff = '';
+                    }
+
+                    return title == 'Inclinar'
+                        ? buildInclinationButton(
+                            context,
+                            title,
+                            icon,
+                            color,
+                            commandOn,
+                            commandOff,
+                            isActive,
+                            iconSize,
+                            margin,
+                          )
+                        : buildButton(
+                            context,
+                            title,
+                            icon,
+                            color,
+                            commandOn,
+                            commandOff,
+                            isActive,
+                            iconSize,
+                            margin,
+                          );
+                  }).toList(),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -182,6 +199,8 @@ class _LancamentoManualScreenState extends State<LancamentoManualScreen>
     String commandOn,
     String commandOff,
     bool isActive,
+    double iconSize,
+    EdgeInsetsGeometry margin,
   ) {
     return GestureDetector(
       onTapDown: (_) => handleButtonPress(title, commandOn),
@@ -191,7 +210,7 @@ class _LancamentoManualScreenState extends State<LancamentoManualScreen>
       child: ScaleTransition(
         scale: _animation!,
         child: Container(
-          margin: EdgeInsets.symmetric(vertical: 3, horizontal: 3),
+          margin: margin,
           child: Card(
             color: isActive ? color : Colors.white,
             elevation: 1,
@@ -200,7 +219,7 @@ class _LancamentoManualScreenState extends State<LancamentoManualScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                Icon(icon, color: isActive ? Colors.white : color, size: 50),
+                Icon(icon, color: isActive ? Colors.white : color, size: iconSize),
                 Text(
                   title,
                   style: TextStyle(
@@ -222,6 +241,8 @@ class _LancamentoManualScreenState extends State<LancamentoManualScreen>
     String commandOn,
     String commandOff,
     bool isActive,
+    double iconSize,
+    EdgeInsetsGeometry margin,
   ) {
     return GestureDetector(
       onTapDown: (_) => handleButtonPress(title, commandOn),
@@ -231,7 +252,7 @@ class _LancamentoManualScreenState extends State<LancamentoManualScreen>
       child: ScaleTransition(
         scale: _animation!,
         child: Container(
-          margin: EdgeInsets.symmetric(vertical: 3, horizontal: 3),
+          margin: margin,
           child: Card(
             color: isActive ? color : Colors.white,
             elevation: 1,
@@ -240,7 +261,7 @@ class _LancamentoManualScreenState extends State<LancamentoManualScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                Icon(icon, color: isActive ? Colors.white : color, size: 50),
+                Icon(icon, color: isActive ? Colors.white : color, size: iconSize),
                 Text(
                   title,
                   style: TextStyle(

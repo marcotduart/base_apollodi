@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:convex_bottom_bar/convex_bottom_bar.dart';
 import 'screens/lancamento_manual_screen.dart';
+
 import 'screens/lancamento_automatico_screen.dart';
 import 'screens/bluetooth_screen.dart';
 

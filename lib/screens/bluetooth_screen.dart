@@ -37,7 +37,7 @@ class _BluetoothScreenState extends State<BluetoothScreen> {
  void scanForDevices() async {
   if (isScanning || connectedDevice != null) return;
 
-  setState(() {
+   setState(() {
     isScanning = true;
     devicesList.clear();
   });
